@@ -20,6 +20,23 @@ local function overRideMethod(object, func, index, callback)
 	end
 end
 
+--for chaining all setters
+function changeAllSetFunctions(class)
+	local newMethods = {}
+	for k,v in pairs(class) do
+		if type(v) == "function" and (k:sub(1, 3) == "set" or k:sub(1, 3) == "add" or k:sub(1, 6) == "remove" or k:sub(1, 5) == "clear") then
+			newMethods["_CH"..k] = v
+			newMethods[k] = function(self, ...)
+				class["_CH"..k](self, ...)
+				return self
+			end
+		end
+	end
+	for k,v in pairs(newMethods) do
+		class[k] = v
+	end
+end
+
 --[[
 	GLOBAL ADDITIONAL FUNCTIONS
 ]]--
@@ -50,11 +67,8 @@ end
 ]]--
 
 --[[ chaining ]]--
-EventDispatcher.__removeEventListener =  EventDispatcher.removeEventListener
-function EventDispatcher:removeEventListener(...)
-	self:__removeEventListener(unpack(arg))
-	return self
-end
+
+changeAllSetFunctions(EventDispatcher)
 
 EventDispatcher.__dispatchEvent =  EventDispatcher.dispatchEvent
 function EventDispatcher:dispatchEvent(...)
@@ -68,96 +82,7 @@ end
 
 --[[ chaining ]]--
 
-Sprite.__addChild =  Sprite.addChild
-function Sprite:addChild(...)
-	self:__addChild(unpack(arg))
-	return self
-end
-
-Sprite.__addChildAt =  Sprite.addChildAt
-function Sprite:addChildAt(...)
-	self:__addChildAt(unpack(arg))
-	return self
-end
-
-Sprite.__removeChildAt =  Sprite.removeChildAt
-function Sprite:removeChildAt(...)
-	self:__removeChildAt(unpack(arg))
-	return self
-end
-
-Sprite.__setVisible =  Sprite.setVisible
-function Sprite:setVisible(...)
-	self:__setVisible(unpack(arg))
-	return self
-end
-
-Sprite.__setMatrix =  Sprite.setMatrix
-function Sprite:setMatrix(...)
-	self:__setMatrix(unpack(arg))
-	return self
-end
-
-Sprite.__removeFromParent =  Sprite.removeFromParent
-function Sprite:removeFromParent(...)
-	self:__removeFromParent(unpack(arg))
-	return self
-end
-
-Sprite.__setBlendMode =  Sprite.setBlendMode
-function Sprite:setBlendMode(...)
-	self:__setBlendMode(unpack(arg))
-	return self
-end
-
-Sprite.__clearBlendMode =  Sprite.clearBlendMode
-function Sprite:clearBlendMode(...)
-	self:__clearBlendMode(unpack(arg))
-	return self
-end
-
---these methods can be manipulated through setters
-function Sprite:setRotation(angle)
-	return self:set("rotation", angle)
-end
-
-function Sprite:setScaleY(scaleY)
-	return self:set("scaleY", scaleY)
-end
-
-function Sprite:setScaleX(scaleX)
-	return self:set("scaleX", scaleX)
-end
-
-function Sprite:setScale(scaleX, scaleY)
-	scaleY = scaleY or scaleX
-	return self	:set("scaleX", scaleX)
-				:set("scaleY", scaleY)
-end
-
-function Sprite:setX(x)
-	return self:set("x", x)
-end
-
-function Sprite:setY(y)
-	return self:set("y", y)
-end
-
-function Sprite:setPosition(x, y)
-	return self	:set("x", x)
-				:set("y", y)
-end
-
-function Sprite:setAlpha(alpha)
-	return self:set("alpha", alpha)
-end
-
-function Sprite:setColorTransform(redMultiplier, greenMultiplier, blueMultiplier, alphaMultiplier)
-	return self	:set("redMultiplier", redMultiplier)
-				:set("greenMultiplier", greenMultiplier)
-				:set("blueMultiplier", blueMultiplier)
-				:set("alphaMultiplier", alphaMultiplier)
-end
+changeAllSetFunctions(Sprite)
 
 --[[ z-axis manipulations ]]--
 
@@ -233,6 +158,19 @@ function Sprite:set(param, value)
 	return self
 end
 
+function Sprite:setX(x)
+	return self:set("x", x)
+end
+
+function Sprite:setY(y)
+	return self:set("y", y)
+end
+
+function Sprite:setPosition(x, y)
+	return self:set("x", x)
+			   :set("y", y)
+end
+
 --[[ skew transformation ]]--
 
 Sprite.transform = {
@@ -291,11 +229,7 @@ end
 
 --[[ chaining ]]--
 
-TextureRegion.__setRegion =  TextureRegion.setRegion
-function TextureRegion:setRegion(...)
-	self:__setRegion(unpack(arg))
-	return self
-end
+changeAllSetFunctions(TextureRegion)
 
 --[[
 	BITMAP EXTENSIONS
@@ -322,17 +256,7 @@ end
 
 --[[ chaining ]]--
 
-Bitmap.__setTexture =  Bitmap.setTexture
-function Bitmap:setTexture(...)
-	self:__setTexture(unpack(arg))
-	return self
-end
-
-Bitmap.__setTextureRegion =  Bitmap.setTextureRegion
-function Bitmap:setTextureRegion(...)
-	self:__setTextureRegion(unpack(arg))
-	return self
-end
+changeAllSetFunctions(Bitmap)
 
 --[[
 	TEXTFIELD EXTENSIONS
@@ -340,23 +264,7 @@ end
 
 --[[ chaining ]]--
 
-TextField.__setText =  TextField.setText
-function TextField:setText(...)
-	self:__setText(unpack(arg))
-	return self
-end
-
-TextField.__setTextColor =  TextField.setTextColor
-function TextField:setTextColor(...)
-	self:__setTextColor(unpack(arg))
-	return self
-end
-
-TextField.__setLetterSpacing =  TextField.setLetterSpacing
-function TextField:setLetterSpacing(...)
-	self:__setLetterSpacing(unpack(arg))
-	return self
-end
+changeAllSetFunctions(TextField)
 
 --[[
 	SHAPE EXTENSIONS
@@ -364,17 +272,7 @@ end
 
 --[[ chaining ]]--
 
-Shape.__setFillStyle =  Shape.setFillStyle
-function Shape:setFillStyle(...)
-	self:__setFillStyle(unpack(arg))
-	return self
-end
-
-Shape.__setLineStyle =  Shape.setLineStyle
-function Shape:setLineStyle(...)
-	self:__setLineStyle(unpack(arg))
-	return self
-end
+changeAllSetFunctions(Shape)
 
 Shape.__beginPath =  Shape.beginPath
 function Shape:beginPath(...)
@@ -403,12 +301,6 @@ end
 Shape.__closePath =  Shape.closePath
 function Shape:closePath(...)
 	self:__closePath(unpack(arg))
-	return self
-end
-
-Shape.__clear =  Shape.clear
-function Shape:clear(...)
-	self:__clear(unpack(arg))
 	return self
 end
 
@@ -499,17 +391,7 @@ end
 
 --[[ chaining ]]--
 
-TileMap.__setTile =  TileMap.setTile
-function TileMap:setTile(...)
-	self:__setTile(unpack(arg))
-	return self
-end
-
-TileMap.__clearTile =  TileMap.clearTile
-function TileMap:clearTile(...)
-	self:__clearTile(unpack(arg))
-	return self
-end
+changeAllSetFunctions(TileMap)
 
 TileMap.__shift =  TileMap.shift
 function TileMap:shift(...)
@@ -522,6 +404,8 @@ end
 ]]--
 
 --[[ chaining ]]--
+
+changeAllSetFunctions(MovieClip)
 
 MovieClip.__play =  MovieClip.play
 function MovieClip:play(...)
@@ -547,23 +431,13 @@ function MovieClip:gotoAndStop(...)
 	return self
 end
 
-MovieClip.__setGotoAction =  MovieClip.setGotoAction
-function MovieClip:setGotoAction(...)
-	self:__setGotoAction(unpack(arg))
-	return self
-end
-
-MovieClip.__clearAction =  MovieClip.clearAction
-function MovieClip:clearAction(...)
-	self:__clearAction(unpack(arg))
-	return self
-end
-
 --[[
 	APPLICATION EXTENSIONS
 ]]--
 
 --[[ chaining ]]--
+
+changeAllSetFunctions(Application)
 
 Application.__openUrl =  Application.openUrl
 function Application:openUrl(...)
@@ -574,42 +448,6 @@ end
 Application.__vibrate =  Application.vibrate
 function Application:vibrate(...)
 	self:__vibrate(unpack(arg))
-	return self
-end
-
-Application.__setKeepAwake =  Application.setKeepAwake
-function Application:setKeepAwake(...)
-	self:__setKeepAwake(unpack(arg))
-	return self
-end
-
-Application.__setBackgroundColor =  Application.setBackgroundColor
-function Application:setBackgroundColor(...)
-	self:__setBackgroundColor(unpack(arg))
-	return self
-end
-
-Application.__setOrientation =  Application.setOrientation
-function Application:setOrientation(...)
-	self:__setOrientation(unpack(arg))
-	return self
-end
-
-Application.__setScaleMode =  Application.setScaleMode
-function Application:setScaleMode(...)
-	self:__setScaleMode(unpack(arg))
-	return self
-end
-
-Application.__setLogicalDimensions =  Application.setLogicalDimensions
-function Application:setLogicalDimensions(...)
-	self:__setLogicalDimensions(unpack(arg))
-	return self
-end
-
-Application.__setFps =  Application.setFps
-function Application:setFps(...)
-	self:__setFps(unpack(arg))
 	return self
 end
 
@@ -629,15 +467,11 @@ end
 
 --[[ chaining ]]--
 
+changeAllSetFunctions(MovieClip)
+
 SoundChannel.__stop =  SoundChannel.stop
 function SoundChannel:stop(...)
 	self:__stop(unpack(arg))
-	return self
-end
-
-SoundChannel.__setVolume =  SoundChannel.setVolume
-function SoundChannel:setVolume(...)
-	self:__setVolume(unpack(arg))
 	return self
 end
 
@@ -651,47 +485,7 @@ end
 
 --[[ chaining ]]--
 
-Matrix.__setM11 =  Matrix.setM11
-function Matrix:setM11(...)
-	self:__setM11(unpack(arg))
-	return self
-end
-
-Matrix.__setM12 =  Matrix.setM12
-function Matrix:setM12(...)
-	self:__setM12(unpack(arg))
-	return self
-end
-
-Matrix.__setM21 =  Matrix.setM21
-function Matrix:setM21(...)
-	self:__setM21(unpack(arg))
-	return self
-end
-
-Matrix.__setM22 =  Matrix.setM22
-function Matrix:setM22(...)
-	self:__setM22(unpack(arg))
-	return self
-end
-
-Matrix.__setTx =  Matrix.setTx
-function Matrix:setTx(...)
-	self:__setTx(unpack(arg))
-	return self
-end
-
-Matrix.__setTy =  Matrix.setTy
-function Matrix:setTy(...)
-	self:__setTy(unpack(arg))
-	return self
-end
-
-Matrix.__setElements =  Matrix.setElements
-function Matrix:setElements(...)
-	self:__setElements(unpack(arg))
-	return self
-end
+changeAllSetFunctions(Matrix)
 
 --[[ abstract functions ]]--
 
@@ -805,161 +599,162 @@ end
 --[[
 	NAMED COLORS
 ]]--
-local colors = {
-	aliceblue = 0xf0f8ff,
-	antiquewhite = 0xfaebd7,
-	aqua = 0x00ffff,
-	aquamarine = 0x7fffd4,
-	azure = 0xf0ffff,
-	beige = 0xf5f5dc,
-	bisque = 0xffe4c4,
-	black = 0x000000,
-	blanchedalmond = 0xffebcd,
-	blue = 0x0000ff,
-	blueviolet = 0x8a2be2,
-	brown = 0xa52a2a,
-	burlywood = 0xdeb887,
-	cadetblue = 0x5f9ea0,
-	chartreuse = 0x7fff00,
-	chocolate = 0xd2691e,
-	coral = 0xff7f50,
-	cornflowerblue = 0x6495ed,
-	cornsilk = 0xfff8dc,
-	crimson = 0xdc143c,
-	cyan = 0x00ffff,
-	darkblue = 0x00008b,
-	darkcyan = 0x008b8b,
-	darkgoldenrod = 0xb8860b,
-	darkgray = 0xa9a9a9,
-	darkgrey = 0xa9a9a9,
-	darkgreen = 0x006400,
-	darkkhaki = 0xbdb76b,
-	darkmagenta = 0x8b008b,
-	darkolivegreen = 0x556b2f,
-	darkorange = 0xff8c00,
-	darkorchid = 0x9932cc,
-	darkred = 0x8b0000,
-	darksalmon = 0xe9967a,
-	darkseagreen = 0x8fbc8f,
-	darkslateblue = 0x483d8b,
-	darkslategray = 0x2f4f4f,
-	darkslategrey = 0x2f4f4f,
-	darkturquoise = 0x00ced1,
-	darkviolet = 0x9400d3,
-	deeppink = 0xff1493,
-	deepskyblue = 0x00bfff,
-	dimgray = 0x696969,
-	dimgrey = 0x696969,
-	dodgerblue = 0x1e90ff,
-	firebrick = 0xb22222,
-	floralwhite = 0xfffaf0,
-	forestgreen = 0x228b22,
-	fuchsia = 0xff00ff,
-	gainsboro = 0xdcdcdc,
-	ghostwhite = 0xf8f8ff,
-	gold = 0xffd700,
-	goldenrod = 0xdaa520,
-	gray = 0x808080,
-	grey = 0x808080,
-	green = 0x008000,
-	greenyellow = 0xadff2f,
-	honeydew = 0xf0fff0,
-	hotpink = 0xff69b4,
-	indianred  = 0xcd5c5c,
-	indigo  = 0x4b0082,
-	ivory = 0xfffff0,
-	khaki = 0xf0e68c,
-	lavender = 0xe6e6fa,
-	lavenderblush = 0xfff0f5,
-	lawngreen = 0x7cfc00,
-	lemonchiffon = 0xfffacd,
-	lightblue = 0xadd8e6,
-	lightcoral = 0xf08080,
-	lightcyan = 0xe0ffff,
-	lightgoldenrodyellow = 0xfafad2,
-	lightgray = 0xd3d3d3,
-	lightgrey = 0xd3d3d3,
-	lightgreen = 0x90ee90,
-	lightpink = 0xffb6c1,
-	lightsalmon = 0xffa07a,
-	lightseagreen = 0x20b2aa,
-	lightskyblue = 0x87cefa,
-	lightslategray = 0x778899,
-	lightslategrey = 0x778899,
-	lightsteelblue = 0xb0c4de,
-	lightyellow = 0xffffe0,
-	lime = 0x00ff00,
-	limegreen = 0x32cd32,
-	linen = 0xfaf0e6,
-	magenta = 0xff00ff,
-	maroon = 0x800000,
-	mediumaquamarine = 0x66cdaa,
-	mediumblue = 0x0000cd,
-	mediumorchid = 0xba55d3,
-	mediumpurple = 0x9370d8,
-	mediumseagreen = 0x3cb371,
-	mediumslateblue = 0x7b68ee,
-	mediumspringgreen = 0x00fa9a,
-	mediumturquoise = 0x48d1cc,
-	mediumvioletred = 0xc71585,
-	midnightblue = 0x191970,
-	mintcream = 0xf5fffa,
-	mistyrose = 0xffe4e1,
-	moccasin = 0xffe4b5,
-	navajowhite = 0xffdead,
-	navy = 0x000080,
-	oldlace = 0xfdf5e6,
-	olive = 0x808000,
-	olivedrab = 0x6b8e23,
-	orange = 0xffa500,
-	orangered = 0xff4500,
-	orchid = 0xda70d6,
-	palegoldenrod = 0xeee8aa,
-	palegreen = 0x98fb98,
-	paleturquoise = 0xafeeee,
-	palevioletred = 0xd87093,
-	papayawhip = 0xffefd5,
-	peachpuff = 0xffdab9,
-	peru = 0xcd853f,
-	pink = 0xffc0cb,
-	plum = 0xdda0dd,
-	powderblue = 0xb0e0e6,
-	purple = 0x800080,
-	red = 0xff0000,
-	rosybrown = 0xbc8f8f,
-	royalblue = 0x4169e1,
-	saddlebrown = 0x8b4513,
-	salmon = 0xfa8072,
-	sandybrown = 0xf4a460,
-	seagreen = 0x2e8b57,
-	seashell = 0xfff5ee,
-	sienna = 0xa0522d,
-	silver = 0xc0c0c0,
-	skyblue = 0x87ceeb,
-	slateblue = 0x6a5acd,
-	slategray = 0x708090,
-	slategrey = 0x708090,
-	snow = 0xfffafa,
-	springgreen = 0x00ff7f,
-	steelblue = 0x4682b4,
-	tan = 0xd2b48c,
-	teal = 0x008080,
-	thistle = 0xd8bfd8,
-	tomato = 0xff6347,
-	turquoise = 0x40e0d0,
-	violet = 0xee82ee,
-	wheat = 0xf5deb3,
-	white = 0xffffff,
-	whitesmoke = 0xf5f5f5,
-	yellow = 0xffff00,
-	yellowgreen = 0x9acd32
+Colors = {
+	ALICEBLUE = 0XF0F8FF,
+	ANTIQUEWHITE = 0XFAEBD7,
+	AQUA = 0X00FFFF,
+	AQUAMARINE = 0X7FFFD4,
+	AZURE = 0XF0FFFF,
+	BEIGE = 0XF5F5DC,
+	BISQUE = 0XFFE4C4,
+	BLACK = 0X000000,
+	BLANCHEDALMOND = 0XFFEBCD,
+	BLUE = 0X0000FF,
+	BLUEVIOLET = 0X8A2BE2,
+	BROWN = 0XA52A2A,
+	BURLYWOOD = 0XDEB887,
+	CADETBLUE = 0X5F9EA0,
+	CHARTREUSE = 0X7FFF00,
+	CHOCOLATE = 0XD2691E,
+	CORAL = 0XFF7F50,
+	CORNFLOWERBLUE = 0X6495ED,
+	CORNSILK = 0XFFF8DC,
+	CRIMSON = 0XDC143C,
+	CYAN = 0X00FFFF,
+	DARKBLUE = 0X00008B,
+	DARKCYAN = 0X008B8B,
+	DARKGOLDENROD = 0XB8860B,
+	DARKGRAY = 0XA9A9A9,
+	DARKGREY = 0XA9A9A9,
+	DARKGREEN = 0X006400,
+	DARKKHAKI = 0XBDB76B,
+	DARKMAGENTA = 0X8B008B,
+	DARKOLIVEGREEN = 0X556B2F,
+	DARKORANGE = 0XFF8C00,
+	DARKORCHID = 0X9932CC,
+	DARKRED = 0X8B0000,
+	DARKSALMON = 0XE9967A,
+	DARKSEAGREEN = 0X8FBC8F,
+	DARKSLATEBLUE = 0X483D8B,
+	DARKSLATEGRAY = 0X2F4F4F,
+	DARKSLATEGREY = 0X2F4F4F,
+	DARKTURQUOISE = 0X00CED1,
+	DARKVIOLET = 0X9400D3,
+	DEEPPINK = 0XFF1493,
+	DEEPSKYBLUE = 0X00BFFF,
+	DIMGRAY = 0X696969,
+	DIMGREY = 0X696969,
+	DODGERBLUE = 0X1E90FF,
+	FIREBRICK = 0XB22222,
+	FLORALWHITE = 0XFFFAF0,
+	FORESTGREEN = 0X228B22,
+	FUCHSIA = 0XFF00FF,
+	GAINSBORO = 0XDCDCDC,
+	GHOSTWHITE = 0XF8F8FF,
+	GOLD = 0XFFD700,
+	GOLDENROD = 0XDAA520,
+	GRAY = 0X808080,
+	GREY = 0X808080,
+	GREEN = 0X008000,
+	GREENYELLOW = 0XADFF2F,
+	HONEYDEW = 0XF0FFF0,
+	HOTPINK = 0XFF69B4,
+	INDIANRED  = 0XCD5C5C,
+	INDIGO  = 0X4B0082,
+	IVORY = 0XFFFFF0,
+	KHAKI = 0XF0E68C,
+	LAVENDER = 0XE6E6FA,
+	LAVENDERBLUSH = 0XFFF0F5,
+	LAWNGREEN = 0X7CFC00,
+	LEMONCHIFFON = 0XFFFACD,
+	LIGHTBLUE = 0XADD8E6,
+	LIGHTCORAL = 0XF08080,
+	LIGHTCYAN = 0XE0FFFF,
+	LIGHTGOLDENRODYELLOW = 0XFAFAD2,
+	LIGHTGRAY = 0XD3D3D3,
+	LIGHTGREY = 0XD3D3D3,
+	LIGHTGREEN = 0X90EE90,
+	LIGHTPINK = 0XFFB6C1,
+	LIGHTSALMON = 0XFFA07A,
+	LIGHTSEAGREEN = 0X20B2AA,
+	LIGHTSKYBLUE = 0X87CEFA,
+	LIGHTSLATEGRAY = 0X778899,
+	LIGHTSLATEGREY = 0X778899,
+	LIGHTSTEELBLUE = 0XB0C4DE,
+	LIGHTYELLOW = 0XFFFFE0,
+	LIME = 0X00FF00,
+	LIMEGREEN = 0X32CD32,
+	LINEN = 0XFAF0E6,
+	MAGENTA = 0XFF00FF,
+	MAROON = 0X800000,
+	MEDIUMAQUAMARINE = 0X66CDAA,
+	MEDIUMBLUE = 0X0000CD,
+	MEDIUMORCHID = 0XBA55D3,
+	MEDIUMPURPLE = 0X9370D8,
+	MEDIUMSEAGREEN = 0X3CB371,
+	MEDIUMSLATEBLUE = 0X7B68EE,
+	MEDIUMSPRINGGREEN = 0X00FA9A,
+	MEDIUMTURQUOISE = 0X48D1CC,
+	MEDIUMVIOLETRED = 0XC71585,
+	MIDNIGHTBLUE = 0X191970,
+	MINTCREAM = 0XF5FFFA,
+	MISTYROSE = 0XFFE4E1,
+	MOCCASIN = 0XFFE4B5,
+	NAVAJOWHITE = 0XFFDEAD,
+	NAVY = 0X000080,
+	OLDLACE = 0XFDF5E6,
+	OLIVE = 0X808000,
+	OLIVEDRAB = 0X6B8E23,
+	ORANGE = 0XFFA500,
+	ORANGERED = 0XFF4500,
+	ORCHID = 0XDA70D6,
+	PALEGOLDENROD = 0XEEE8AA,
+	PALEGREEN = 0X98FB98,
+	PALETURQUOISE = 0XAFEEEE,
+	PALEVIOLETRED = 0XD87093,
+	PAPAYAWHIP = 0XFFEFD5,
+	PEACHPUFF = 0XFFDAB9,
+	PERU = 0XCD853F,
+	PINK = 0XFFC0CB,
+	PLUM = 0XDDA0DD,
+	POWDERBLUE = 0XB0E0E6,
+	PURPLE = 0X800080,
+	RED = 0XFF0000,
+	ROSYBROWN = 0XBC8F8F,
+	ROYALBLUE = 0X4169E1,
+	SADDLEBROWN = 0X8B4513,
+	SALMON = 0XFA8072,
+	SANDYBROWN = 0XF4A460,
+	SEAGREEN = 0X2E8B57,
+	SEASHELL = 0XFFF5EE,
+	SIENNA = 0XA0522D,
+	SILVER = 0XC0C0C0,
+	SKYBLUE = 0X87CEEB,
+	SLATEBLUE = 0X6A5ACD,
+	SLATEGRAY = 0X708090,
+	SLATEGREY = 0X708090,
+	SNOW = 0XFFFAFA,
+	SPRINGGREEN = 0X00FF7F,
+	STEELBLUE = 0X4682B4,
+	TAN = 0XD2B48C,
+	TEAL = 0X008080,
+	THISTLE = 0XD8BFD8,
+	TOMATO = 0XFF6347,
+	TURQUOISE = 0X40E0D0,
+	VIOLET = 0XEE82EE,
+	WHEAT = 0XF5DEB3,
+	WHITE = 0XFFFFFF,
+	WHITESMOKE = 0XF5F5F5,
+	YELLOW = 0XFFFF00,
+	YELLOWGREEN = 0X9ACD32,
 }
 
 local function colorCallback(color)
 	if type(color) == "string" then
-		color:lower()
-		if colors[color] then
-			color = colors[color]
+		color = color:upper()
+		color = Colors[color]
+		if color == nil then
+			error("Invalid color name")
 		end
 	end
 	return color

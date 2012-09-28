@@ -1,8 +1,8 @@
 
 --some initial settings
 application:setBackgroundColor("yellow")
-			:setOrientation("landscapeLeft")
-			:setLogicalDimensions(800, 480)
+			:setOrientation("portrait")
+			:setLogicalDimensions(320, 480)
 			:setScaleMode("letterbox")
 			:setFps(60)
 			:setKeepAwake(true)
@@ -24,7 +24,8 @@ local shape = Shape.new()
 	:setX("center")
 	--touch works also on desktop players
 	:addEventListener(Event.TOUCHES_BEGIN, function(e)
-		print("touched at ", e.touch.x, e.touch.y)
+		--recursive print for table
+		print_r(e.touch)
 	end)
 	
 local bitmap = Bitmap.new("crate.png", true)

@@ -1,27 +1,38 @@
 
---testing named colors
+--some initial settings
 application:setBackgroundColor("yellow")
+			:setOrientation("landscapeLeft")
+			:setLogicalDimensions(800, 480)
+			:setScaleMode("letterbox")
+			:setFps(60)
+			:setKeepAwake(true)
 
 local text = TextField.new(nil, "Some text")
-text:setTextColor("white")
---positioning
-text:setPosition("center", "center")
-stage:addChild(text)
+	--positioning
+	:setPosition("center", "center")
+	--named colors
+	:setTextColor("white")
 
 local shape = Shape.new()
-shape:setFillStyle(Shape.SOLID, "red")
---drawing primitive shape
---shape:drawRect(100, 100)
-shape:drawCircle(100, 100, 100)
---positioning
-shape:setY("center")
-shape:setX("center")
-stage:addChild(shape)
+	--named colors
+	:setFillStyle(Shape.SOLID, "red")
+	--drawing primitive shape
+	--:drawRect(100, 100)
+	:drawCircle(100, 100, 100)
+	--positioning
+	:setY("center")
+	:setX("center")
+	--touch works also on desktop players
+	:addEventListener(Event.TOUCHES_BEGIN, function(e)
+		print("touched at ", e.touch.x, e.touch.y)
+	end)
+	
+local bitmap = Bitmap.new("crate.png", true)
+	:setPosition("center", "top")
+
+stage:addChild(text)
+	 :addChild(shape)
+	 :addChild(bitmap)
 
 --controlling z-index
 text:bringToFront()
-
---touch works also on desktop players
-shape:addEventListener(Event.TOUCHES_BEGIN, function(e)
-	print("touched at ", e.touch.x, e.touch.y)
-end)

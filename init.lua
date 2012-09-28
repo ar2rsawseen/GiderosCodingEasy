@@ -1,26 +1,31 @@
 --[[
-	HELPING FUNCTIONS
+	INTERNAL HELPING FUNCTIONS
 ]]--
 
 --function for adding methods
-function addMethod(object, funcName, func)
+local function addMethod(object, funcName, func)
 	object[funcName] = func
 end
 
 --function for overriding methods
-function overRideMethod(object, func, index, callback)
-	if object ~= nil and object[func] ~= nil and object["__"..func] == nil then
-		object["__"..func] = object[func]
+local function overRideMethod(object, func, index, callback)
+	if object ~= nil and object[func] ~= nil and object["__OV"..func] == nil then
+		object["__OV"..func] = object[func]
 		object[func] = function(...)
 			if arg[index] then
 				arg[index] = callback(arg[index])
 			end
-			return object["__"..func](unpack(arg))
+			return object["__OV"..func](unpack(arg))
 		end
 	end
 end
 
-local function print_r (t, indent, done)
+--[[
+	GLOBAL ADDITIONAL FUNCTIONS
+]]--
+
+--recursive print of tables
+function print_r (t, indent, done)
   done = done or {}
   indent = indent or ''
   local nextIndent -- Storage for next indentation value
@@ -41,8 +46,118 @@ local function print_r (t, indent, done)
 end
 
 --[[
+	EVENTDISPATCHER EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+EventDispatcher.__removeEventListener =  EventDispatcher.removeEventListener
+function EventDispatcher:removeEventListener(...)
+	self:__removeEventListener(unpack(arg))
+	return self
+end
+
+EventDispatcher.__dispatchEvent =  EventDispatcher.dispatchEvent
+function EventDispatcher:dispatchEvent(...)
+	self:__dispatchEvent(unpack(arg))
+	return self
+end
+
+--[[
 	SPRITE EXTENSIONS
 ]]--
+
+--[[ chaining ]]--
+
+Sprite.__addChild =  Sprite.addChild
+function Sprite:addChild(...)
+	self:__addChild(unpack(arg))
+	return self
+end
+
+Sprite.__addChildAt =  Sprite.addChildAt
+function Sprite:addChildAt(...)
+	self:__addChildAt(unpack(arg))
+	return self
+end
+
+Sprite.__removeChildAt =  Sprite.removeChildAt
+function Sprite:removeChildAt(...)
+	self:__removeChildAt(unpack(arg))
+	return self
+end
+
+Sprite.__setVisible =  Sprite.setVisible
+function Sprite:setVisible(...)
+	self:__setVisible(unpack(arg))
+	return self
+end
+
+Sprite.__setMatrix =  Sprite.setMatrix
+function Sprite:setMatrix(...)
+	self:__setMatrix(unpack(arg))
+	return self
+end
+
+Sprite.__removeFromParent =  Sprite.removeFromParent
+function Sprite:removeFromParent(...)
+	self:__removeFromParent(unpack(arg))
+	return self
+end
+
+Sprite.__setBlendMode =  Sprite.setBlendMode
+function Sprite:setBlendMode(...)
+	self:__setBlendMode(unpack(arg))
+	return self
+end
+
+Sprite.__clearBlendMode =  Sprite.clearBlendMode
+function Sprite:clearBlendMode(...)
+	self:__clearBlendMode(unpack(arg))
+	return self
+end
+
+--these methods can be manipulated through setters
+function Sprite:setRotation(angle)
+	return self:set("rotation", angle)
+end
+
+function Sprite:setScaleY(scaleY)
+	return self:set("scaleY", scaleY)
+end
+
+function Sprite:setScaleX(scaleX)
+	return self:set("scaleX", scaleX)
+end
+
+function Sprite:setScale(scaleX, scaleY)
+	scaleY = scaleY or scaleX
+	return self	:set("scaleX", scaleX)
+				:set("scaleY", scaleY)
+end
+
+function Sprite:setX(x)
+	return self:set("x", x)
+end
+
+function Sprite:setY(y)
+	return self:set("y", y)
+end
+
+function Sprite:setPosition(x, y)
+	return self	:set("x", x)
+				:set("y", y)
+end
+
+function Sprite:setAlpha(alpha)
+	return self:set("alpha", alpha)
+end
+
+function Sprite:setColorTransform(redMultiplier, greenMultiplier, blueMultiplier, alphaMultiplier)
+	return self	:set("redMultiplier", redMultiplier)
+				:set("greenMultiplier", greenMultiplier)
+				:set("blueMultiplier", blueMultiplier)
+				:set("alphaMultiplier", alphaMultiplier)
+end
 
 --[[ z-axis manipulations ]]--
 
@@ -51,6 +166,7 @@ function Sprite:bringToFront()
 	if parent then
 		parent:addChild(self)
 	end
+	return self
 end
  
 function Sprite:sendToBack()
@@ -58,6 +174,7 @@ function Sprite:sendToBack()
 	if parent then
 		parent:addChildAt(self, 0)
 	end
+	return self
 end
  
 function Sprite:setIndex(index)
@@ -68,6 +185,7 @@ function Sprite:setIndex(index)
 		end
 		parent:addChildAt(self, index)
 	end
+	return self
 end
 
 --[[ simple collision detection ]]--
@@ -79,7 +197,7 @@ function Sprite:collidesWith(sprite2)
 	return not ((y+h < y2) or (y > y2+h2) or (x > x2+w2) or (x+w < x2))
 end
 
---[[ messing up with set method ]]--
+--[[ messing with set method ]]--
 
 Sprite._set = Sprite.set
 
@@ -112,21 +230,7 @@ function Sprite:set(param, value)
 		end
 		Sprite._set(self, param, value)
 	end
-end
-
---[[ position wrappers ]]--
-
-function Sprite:setX(x)
-	self:set("x", x)
-end
-
-function Sprite:setY(y)
-	self:set("y", y)
-end
-
-function Sprite:setPosition(x, y)
-	self:set("x", x)
-	self:set("y", y)
+	return self
 end
 
 --[[ skew transformation ]]--
@@ -137,26 +241,26 @@ Sprite.transform = {
 	"skewY"
 }
 function Sprite:setSkew(xAng, yAng)
-	self:set("skewX", xAng)
-	self:set("skewY", yAng)
+	return self	:set("skewX", xAng)
+				:set("skewY", yAng)
 end
 
 function Sprite:setSkewX(xAng)
-	self:set("skewX", xAng)
+	return self:set("skewX", xAng)
 end
 
 function Sprite:setSkewY(yAng)
-	self:set("skewY", yAng)
+	return self:set("skewY", yAng)
 end
 
 --[[ flipping ]]--
 
 function Sprite:flipHorizontal()
-	self:setScaleX(-1)
+	return self:setScaleX(-self:getScaleX())
 end
 
 function Sprite:flipVertical()
-	self:setScaleY(-1)
+	return self:setScaleY(-self:getScaleY())
 end
 
 --[[ hiding/showing visually and from touch/mouse events ]]--
@@ -167,6 +271,7 @@ function Sprite:hide()
 		self:setScale(0)
 		self.isHidden = true
 	end
+	return self
 end
 
 function Sprite:isHidden()
@@ -177,11 +282,135 @@ function Sprite:show()
 	if self.isHidden then
 		self:setScale(self.xScale, self.yScale)
 	end
+	return self
+end
+
+--[[
+	TEXTUREREGION EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+TextureRegion.__setRegion =  TextureRegion.setRegion
+function TextureRegion:setRegion(...)
+	self:__setRegion(unpack(arg))
+	return self
+end
+
+--[[
+	BITMAP EXTENSIONS
+]]--
+
+--[[ shorthand for creating bitmaps ]]--
+
+Bitmap._new = Bitmap.new
+
+function Bitmap.new(...)
+	
+	if type(arg[1] == "string") then
+		arg[1] = Texture.new(unpack(arg))
+	end
+	
+	local bitmap = Bitmap._new(arg[1])
+	bitmap.texture = arg[1]
+	return bitmap
+end
+
+function Bitmap:getTexture()
+	return texture
+end
+
+--[[ chaining ]]--
+
+Bitmap.__setTexture =  Bitmap.setTexture
+function Bitmap:setTexture(...)
+	self:__setTexture(unpack(arg))
+	return self
+end
+
+Bitmap.__setTextureRegion =  Bitmap.setTextureRegion
+function Bitmap:setTextureRegion(...)
+	self:__setTextureRegion(unpack(arg))
+	return self
+end
+
+--[[
+	TEXTFIELD EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+TextField.__setText =  TextField.setText
+function TextField:setText(...)
+	self:__setText(unpack(arg))
+	return self
+end
+
+TextField.__setTextColor =  TextField.setTextColor
+function TextField:setTextColor(...)
+	self:__setTextColor(unpack(arg))
+	return self
+end
+
+TextField.__setLetterSpacing =  TextField.setLetterSpacing
+function TextField:setLetterSpacing(...)
+	self:__setLetterSpacing(unpack(arg))
+	return self
 end
 
 --[[
 	SHAPE EXTENSIONS
 ]]--
+
+--[[ chaining ]]--
+
+Shape.__setFillStyle =  Shape.setFillStyle
+function Shape:setFillStyle(...)
+	self:__setFillStyle(unpack(arg))
+	return self
+end
+
+Shape.__setLineStyle =  Shape.setLineStyle
+function Shape:setLineStyle(...)
+	self:__setLineStyle(unpack(arg))
+	return self
+end
+
+Shape.__beginPath =  Shape.beginPath
+function Shape:beginPath(...)
+	self:__beginPath(unpack(arg))
+	return self
+end
+
+Shape.__moveTo =  Shape.moveTo
+function Shape:moveTo(...)
+	self:__moveTo(unpack(arg))
+	return self
+end
+
+Shape.__lineTo =  Shape.lineTo
+function Shape:lineTo(...)
+	self:__lineTo(unpack(arg))
+	return self
+end
+
+Shape.__endPath =  Shape.endPath
+function Shape:endPath(...)
+	self:__endPath(unpack(arg))
+	return self
+end
+
+Shape.__closePath =  Shape.closePath
+function Shape:closePath(...)
+	self:__closePath(unpack(arg))
+	return self
+end
+
+Shape.__clear =  Shape.clear
+function Shape:clear(...)
+	self:__clear(unpack(arg))
+	return self
+end
 
 --[[ draw a polygon from a list of vertices ]]--
 
@@ -192,12 +421,13 @@ function Shape:drawPoly(points)
 	end
 	self:closePath()
 	self:endPath()
+	return self
 end
 
 --[[ draw rectangle ]]--
 
 function Shape:drawRect(width, height)
-	self:drawPoly({
+	return self:drawPoly({
 		{0, 0},
 		{width, 0},
 		{width, height},
@@ -208,59 +438,179 @@ end
 --[[ draw elipse from ndoss ]]--
 
 function Shape:drawEllipse(x,y,xradius,yradius,startAngle,endAngle,anticlockwise)
-   local sides = (xradius + yradius) / 2  -- need a better default
-   local dist  = 0
+	local sides = (xradius + yradius) / 2  -- need a better default
+	local dist  = 0
 
-   -- handle missing entries
-   if startAngle == nil then startAngle = 0 end
-   if endAngle   == nil then endAngle   = 2*math.pi end
+	-- handle missing entries
+	if startAngle == nil then startAngle = 0 end
+	if endAngle   == nil then endAngle   = 2*math.pi end
 
-   -- Find clockwise distance (convert negative distances to positive)
-   dist = endAngle - startAngle
-   if (dist < 0) then
-      dist = 2*math.pi - ((-dist) % (2*math.pi))
-   end
+	-- Find clockwise distance (convert negative distances to positive)
+	dist = endAngle - startAngle
+	if (dist < 0) then
+		dist = 2*math.pi - ((-dist) % (2*math.pi))
+	end
 
-   -- handle clockwise/anticlockwise
-   if anticlockwise == nil or anticlockwise == false then
-      -- CW
-      -- Handle special case where mod of the two angles is equal but
-      -- they're really not equal 
-      if dist == 0 and startAngle ~= endAngle then
-         dist = 2*math.pi
-      end
-   else
-      -- CCW
-      dist = dist - 2*math.pi
+	-- handle clockwise/anticlockwise
+	if anticlockwise == nil or anticlockwise == false then
+		-- CW
+		-- Handle special case where mod of the two angles is equal but
+		-- they're really not equal 
+		if dist == 0 and startAngle ~= endAngle then
+			dist = 2*math.pi
+		end
+	else
+		-- CCW
+		dist = dist - 2*math.pi
 
-      -- Handle special case where mod of the two angles is equal but
-      -- they're really not equal 
-      if dist == 0 and startAngle ~= endAngle then
-         dist = -2*math.pi
-      end
+		-- Handle special case where mod of the two angles is equal but
+		-- they're really not equal 
+		if dist == 0 and startAngle ~= endAngle then
+			dist = -2*math.pi
+		end
 
-   end
+	end
 	self:beginPath()
-   -- add the lines
-   for i=0,sides do
-      local angle = (i/sides) *  dist + startAngle
-      self:lineTo(x + math.cos(angle) * xradius,
+	-- add the lines
+	for i=0,sides do
+		local angle = (i/sides) *  dist + startAngle
+		self:lineTo(x + math.cos(angle) * xradius,
                          y + math.sin(angle) * yradius)
-   end
-   self:closePath()
-   self:endPath()
-
+	end
+	self:closePath()
+	self:endPath()
+	return self
 end
 
 --[[ draw arc from ndoss ]]--
 function Shape:drawArc(centerX, centerY, radius, startAngle, endAngle, anticlockwise)
-   self:drawEllipse(centerX, centerY, radius, radius, startAngle ,endAngle, anticlockwise)
+	return self:drawEllipse(centerX, centerY, radius, radius, startAngle ,endAngle, anticlockwise)
 end
 
 --[[ draw circle from ndoss ]]--
 
 function Shape:drawCircle(centerX, centerY, radius, anticlockwise)
-   self:drawEllipse(centerX, centerY, radius, radius, 0, 2*math.pi, anticlockwise)
+	return self:drawEllipse(centerX, centerY, radius, radius, 0, 2*math.pi, anticlockwise)
+end
+
+--[[
+	TILEMAP EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+TileMap.__setTile =  TileMap.setTile
+function TileMap:setTile(...)
+	self:__setTile(unpack(arg))
+	return self
+end
+
+TileMap.__clearTile =  TileMap.clearTile
+function TileMap:clearTile(...)
+	self:__clearTile(unpack(arg))
+	return self
+end
+
+TileMap.__shift =  TileMap.shift
+function TileMap:shift(...)
+	self:__shift(unpack(arg))
+	return self
+end
+
+--[[
+	MOVIECLIP EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+MovieClip.__play =  MovieClip.play
+function MovieClip:play(...)
+	self:__play(unpack(arg))
+	return self
+end
+
+MovieClip.__stop =  MovieClip.stop
+function MovieClip:stop(...)
+	self:__stop(unpack(arg))
+	return self
+end
+
+MovieClip.__gotoAndPlay =  MovieClip.gotoAndPlay
+function MovieClip:gotoAndPlay(...)
+	self:__gotoAndPlay(unpack(arg))
+	return self
+end
+
+MovieClip.__gotoAndStop =  MovieClip.gotoAndStop
+function MovieClip:gotoAndStop(...)
+	self:__gotoAndStop(unpack(arg))
+	return self
+end
+
+MovieClip.__setGotoAction =  MovieClip.setGotoAction
+function MovieClip:setGotoAction(...)
+	self:__setGotoAction(unpack(arg))
+	return self
+end
+
+MovieClip.__clearAction =  MovieClip.clearAction
+function MovieClip:clearAction(...)
+	self:__clearAction(unpack(arg))
+	return self
+end
+
+--[[
+	APPLICATION EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+Application.__openUrl =  Application.openUrl
+function Application:openUrl(...)
+	self:__openUrl(unpack(arg))
+	return self
+end
+
+Application.__vibrate =  Application.vibrate
+function Application:vibrate(...)
+	self:__vibrate(unpack(arg))
+	return self
+end
+
+Application.__setKeepAwake =  Application.setKeepAwake
+function Application:setKeepAwake(...)
+	self:__setKeepAwake(unpack(arg))
+	return self
+end
+
+Application.__setBackgroundColor =  Application.setBackgroundColor
+function Application:setBackgroundColor(...)
+	self:__setBackgroundColor(unpack(arg))
+	return self
+end
+
+Application.__setOrientation =  Application.setOrientation
+function Application:setOrientation(...)
+	self:__setOrientation(unpack(arg))
+	return self
+end
+
+Application.__setScaleMode =  Application.setScaleMode
+function Application:setScaleMode(...)
+	self:__setScaleMode(unpack(arg))
+	return self
+end
+
+Application.__setLogicalDimensions =  Application.setLogicalDimensions
+function Application:setLogicalDimensions(...)
+	self:__setLogicalDimensions(unpack(arg))
+	return self
+end
+
+Application.__setFps =  Application.setFps
+function Application:setFps(...)
+	self:__setFps(unpack(arg))
+	return self
 end
 
 --[[
@@ -274,53 +624,121 @@ function Sound:loop()
 end
 
 --[[
+	SOUNDSCHANNEL EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+SoundChannel.__stop =  SoundChannel.stop
+function SoundChannel:stop(...)
+	self:__stop(unpack(arg))
+	return self
+end
+
+SoundChannel.__setVolume =  SoundChannel.setVolume
+function SoundChannel:setVolume(...)
+	self:__setVolume(unpack(arg))
+	return self
+end
+
+--[[
 	MATRIX EXTENSIONS
 ]]--
 
+--[[
+	SOUNDSCHANNEL EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+Matrix.__setM11 =  Matrix.setM11
+function Matrix:setM11(...)
+	self:__setM11(unpack(arg))
+	return self
+end
+
+Matrix.__setM12 =  Matrix.setM12
+function Matrix:setM12(...)
+	self:__setM12(unpack(arg))
+	return self
+end
+
+Matrix.__setM21 =  Matrix.setM21
+function Matrix:setM21(...)
+	self:__setM21(unpack(arg))
+	return self
+end
+
+Matrix.__setM22 =  Matrix.setM22
+function Matrix:setM22(...)
+	self:__setM22(unpack(arg))
+	return self
+end
+
+Matrix.__setTx =  Matrix.setTx
+function Matrix:setTx(...)
+	self:__setTx(unpack(arg))
+	return self
+end
+
+Matrix.__setTy =  Matrix.setTy
+function Matrix:setTy(...)
+	self:__setTy(unpack(arg))
+	return self
+end
+
+Matrix.__setElements =  Matrix.setElements
+function Matrix:setElements(...)
+	self:__setElements(unpack(arg))
+	return self
+end
+
+--[[ abstract functions ]]--
+
 function Matrix:rotate(deg)
 	local rad = math.rad(deg)
-	self:multiply(Matrix.new(math.cos(rad), math.sin(rad), -math.sin(rad), math.cos(rad), 0, 0))
+	return self:multiply(Matrix.new(math.cos(rad), math.sin(rad), -math.sin(rad), math.cos(rad), 0, 0))
 end
 
 function Matrix:translate(x,y)
 	if not y then y = x end
-	self:multiply(Matrix.new(1, 0, 0, 1, x, y))
+	return self:multiply(Matrix.new(1, 0, 0, 1, x, y))
 end
 
 function Matrix:translateX(x)
-	self:translate(x, 0)
+	return self:translate(x, 0)
 end
 
 function Matrix:translateY(y)
-	self:translate(0, y)
+	return self:translate(0, y)
 end
 
 function Matrix:scale(x,y)
 	if not y then y = x end
-	self:multiply(Matrix.new(x, 0, 0, y, 0, 0))
+	return self:multiply(Matrix.new(x, 0, 0, y, 0, 0))
 end
 
 function Matrix:scaleX(x)
-	self:scale(x, 1)
+	return self:scale(x, 1)
 end
 
 function Matrix:scaleY(y)
-	self:scale(1, y)
+	return self:scale(1, y)
 end
 
 function Matrix:skew(xAng,yAng)
 	if not yAng then yAng = xAng end
 	xAng = math.rad(xAng)
 	yAng = math.rad(yAng)
-	self:multiply(Matrix.new(1, math.tan(yAng), math.tan(xAng), 1, 0, 0))
+	return self:multiply(Matrix.new(1, math.tan(yAng), math.tan(xAng), 1, 0, 0))
 end
 
 function Matrix:skewX(xAng)
-	self:skew(xAng, 0)
+	return self:skew(xAng, 0)
 end
 
 function Matrix:skewY(yAng)
-	self:skew(0, yAng)
+	return self:skew(0, yAng)
 end
 
 function Matrix:multiply(matrix)
@@ -330,21 +748,22 @@ function Matrix:multiply(matrix)
 	local m22 = matrix:getM21()*self:getM12() + matrix:getM22()*self:getM22()
 	local tx = self:getTx() + matrix:getTx()
 	local ty = self:getTy() + matrix:getTy()
-	self:setElements(m11, m12, m21, m22, tx, ty)
+	return self:setElements(m11, m12, m21, m22, tx, ty)
 end
 
 function Matrix:copy()
-	return Transform.new(self:getElements())
+	return Matrix.new(self:getElements())
 end
 
 function Matrix:apply(obj)
 	if obj.setMatrix then
 		obj:setMatrix(self)
 	end
+	return self
 end
 
 function Matrix:reset()
-	self:setElements(1, 0, 0, 1, 0, 0)
+	return self:setElements(1, 0, 0, 1, 0, 0)
 end
 
 --[[
@@ -379,6 +798,7 @@ if os == "Windows" or os == "Mac OS" then
 		else
 			self:__addEventListener(type, listener, data)
 		end
+		return self
 	end
 end
 

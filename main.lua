@@ -27,13 +27,42 @@ local shape = Shape.new()
 		--recursive print for table
 		print_r(e.touch)
 	end)
-	
-local bitmap = Bitmap.new("crate.png", true)
-	:setPosition("center", "top")
+
+-- box2d examples
+local world = b2.World.new(0, 10, true)
+
+--place image on screen
+local crate = Bitmap.new("crate.png", true)
+	:setPosition("center", "center")
+
+--create rectangle based on image
+world:createRectangle(crate, {type = "dynamic"})
+
+--place image on screen
+local ball = Bitmap.new("ball.png", true)
+	:setPosition("left", "center")
+
+--create circle based on image
+world:createCircle(ball, {type = "dynamic", draggable = true})
+
+--create terrain so objects won't fall of the screen
+world:createTerrain(nil, {0,0, 
+	application:getContentWidth(),0, 
+	application:getContentWidth(), application:getContentHeight(), 
+	0, application:getContentHeight(), 
+	0,0})
 
 stage:addChild(text)
 	 :addChild(shape)
-	 :addChild(bitmap)
+	 :addChild(crate)
+	 :addChild(ball)
+	 --debugging world
+	 :addChild(world:getDebug())
+	 --updating world
+	 :addEventListener(Event.ENTER_FRAME, function()
+		world:update()
+	 end)
 
 --controlling z-index
 text:bringToFront()
+

@@ -62,6 +62,16 @@ function print_r (t, indent, done)
   end
 end
 
+function math.round(num, factor) 
+	if factor then
+		-- Round a number to the nearest factor
+		return factor*math.round(num/factor)
+	else
+		-- Round a number to the nearest integer
+		return math.floor(num+.5)
+	end
+end
+
 --[[
 	EVENTDISPATCHER EXTENSIONS
 ]]--
@@ -72,7 +82,7 @@ changeAllSetFunctions(EventDispatcher)
 
 EventDispatcher.__dispatchEvent =  EventDispatcher.dispatchEvent
 function EventDispatcher:dispatchEvent(...)
-	self:__dispatchEvent(unpack(arg))
+	self:__dispatchEvent(...)
 	return self
 end
 
@@ -132,25 +142,28 @@ function Sprite:set(param, value)
 		matrix[param](matrix, value)
 		self:setMatrix(matrix)
 	else
-		local _, _, width, height = self:getBounds(stage)
 		if param == "x" and type(value) == "string" then
+			local _, _, width, height = self:getBounds(stage)
 			local xPosition = {
 				left = 0,
 				center = (application:getContentWidth() - width)/2,
 				right = application:getContentWidth() - width
 			}
-			if xPosition[value] then
-				value = xPosition[value]
+			value = xPosition[value]
+			if not value then
+				error("Invalid position name")
 			end
 		end
 		if param == "y" and type(value) == "string" then
+			local _, _, width, height = self:getBounds(stage)
 			local yPosition = {
 				top = 0,
 				center = (application:getContentHeight() - height)/2,
 				bottom = application:getContentHeight() - height
 			}
-			if yPosition[value] then
-				value = yPosition[value]
+			value = yPosition[value]
+			if not value then
+				error("Invalid position name")
 			end
 		end
 		Sprite._set(self, param, value)
@@ -169,6 +182,44 @@ end
 function Sprite:setPosition(x, y)
 	return self:set("x", x)
 			   :set("y", y)
+end
+
+function Sprite:ignoreTouchHandler(event)
+	-- Simple handler to ignore touches on a sprite. This blocks touches
+	-- from other objects below it.
+	if self:hitTestPoint(event.touch.x, event.touch.y) then
+		event:stopPropagation()
+	end
+	return self
+end
+
+function Sprite:ignoreMouseHandler(event)
+	-- Simple handler to ignore mouse events on a sprite. This blocks mouse events
+	-- from other objects below it.
+	if self:hitTestPoint(event.x, event.y) then
+		event:stopPropagation()
+	end
+	return self
+end
+
+function Sprite:ignoreTouches(event)
+	-- Tell a sprite to ignore (and block) all mouse and touch events
+	return self:addEventListener(Event.MOUSE_DOWN, self.ignoreMouseHandler, self)
+			   :addEventListener(Event.TOUCHES_BEGIN, self.ignoreTouchHandler, self)
+end
+
+function Sprite:setWidth(newWidth)
+	-- Set a sprite's width using the scale property
+	local x,y,width,height=self:getBounds(self)
+	local newScale=newWidth/width
+	return self:setScaleX(newScale)
+end
+ 
+function Sprite:setHeight(newHeight)
+	-- Set a sprite's height using the scale property
+	local x,y,width,height=self:getBounds(self)
+	local newScale=newHeight/height
+	return self:setScaleY(newScale)
 end
 
 --[[ skew transformation ]]--
@@ -232,6 +283,26 @@ end
 changeAllSetFunctions(TextureRegion)
 
 --[[
+	TEXTUREPACK EXTENSIONS
+]]--
+
+--[[ shorthand ]]--
+
+TexturePack._new = TexturePack.new
+
+function TexturePack.new(...)
+	
+	local pack
+	if type(arg[1] == "string") then
+		pack = TexturePack._new(arg[1]..".txt", arg[1]..".png")
+	else
+		pack = TexturePack._new(...)
+	end
+
+	return pack
+end
+
+--[[
 	BITMAP EXTENSIONS
 ]]--
 
@@ -276,31 +347,31 @@ changeAllSetFunctions(Shape)
 
 Shape.__beginPath =  Shape.beginPath
 function Shape:beginPath(...)
-	self:__beginPath(unpack(arg))
+	self:__beginPath(...)
 	return self
 end
 
 Shape.__moveTo =  Shape.moveTo
 function Shape:moveTo(...)
-	self:__moveTo(unpack(arg))
+	self:__moveTo(...)
 	return self
 end
 
 Shape.__lineTo =  Shape.lineTo
 function Shape:lineTo(...)
-	self:__lineTo(unpack(arg))
+	self:__lineTo(...)
 	return self
 end
 
 Shape.__endPath =  Shape.endPath
 function Shape:endPath(...)
-	self:__endPath(unpack(arg))
+	self:__endPath(...)
 	return self
 end
 
 Shape.__closePath =  Shape.closePath
 function Shape:closePath(...)
-	self:__closePath(unpack(arg))
+	self:__closePath(...)
 	return self
 end
 
@@ -395,7 +466,7 @@ changeAllSetFunctions(TileMap)
 
 TileMap.__shift =  TileMap.shift
 function TileMap:shift(...)
-	self:__shift(unpack(arg))
+	self:__shift(...)
 	return self
 end
 
@@ -409,25 +480,25 @@ changeAllSetFunctions(MovieClip)
 
 MovieClip.__play =  MovieClip.play
 function MovieClip:play(...)
-	self:__play(unpack(arg))
+	self:__play(...)
 	return self
 end
 
 MovieClip.__stop =  MovieClip.stop
 function MovieClip:stop(...)
-	self:__stop(unpack(arg))
+	self:__stop(...)
 	return self
 end
 
 MovieClip.__gotoAndPlay =  MovieClip.gotoAndPlay
 function MovieClip:gotoAndPlay(...)
-	self:__gotoAndPlay(unpack(arg))
+	self:__gotoAndPlay(...)
 	return self
 end
 
 MovieClip.__gotoAndStop =  MovieClip.gotoAndStop
 function MovieClip:gotoAndStop(...)
-	self:__gotoAndStop(unpack(arg))
+	self:__gotoAndStop(...)
 	return self
 end
 
@@ -441,13 +512,13 @@ changeAllSetFunctions(Application)
 
 Application.__openUrl =  Application.openUrl
 function Application:openUrl(...)
-	self:__openUrl(unpack(arg))
+	self:__openUrl(...)
 	return self
 end
 
 Application.__vibrate =  Application.vibrate
 function Application:vibrate(...)
-	self:__vibrate(unpack(arg))
+	self:__vibrate(...)
 	return self
 end
 
@@ -471,7 +542,7 @@ changeAllSetFunctions(MovieClip)
 
 SoundChannel.__stop =  SoundChannel.stop
 function SoundChannel:stop(...)
-	self:__stop(unpack(arg))
+	self:__stop(...)
 	return self
 end
 
@@ -574,7 +645,7 @@ if os == "Windows" or os == "Mac OS" then
 		e.touch.id = 1
 		e.touch.x = e.x
 		e.touch.y = e.y
- 
+		
 		if t.data then
 			t.listener(t.data, e)
 		else
@@ -764,3 +835,264 @@ overRideMethod(TextField, "setTextColor", 2, colorCallback)
 overRideMethod(Application, "setBackgroundColor", 2, colorCallback)
 overRideMethod(Shape, "setFillStyle", 3, colorCallback)
 overRideMethod(Shape, "setLineStyle", 3, colorCallback)
+
+--[[
+	PHYSICS EXTENSIONS
+]]--
+
+require "box2d"
+
+b2.World._new = b2.World.new
+
+function b2.World.new(...)
+	local world = b2.World._new(...)
+	world.sprites = {}
+	return world
+end
+
+function b2.World:makeDraggable(object)
+	--create empty box2d body for joint
+	--since mouse cursor is not a body
+	--we need dummy body to create joint
+	local ground = self:createBody({})
+     
+	--joint with dummy body
+	local mouseJoint = nil
+	-- create a mouse joint on mouse down
+	object.onDragStart = function(self, event)
+		if object:hitTestPoint(event.touch.x, event.touch.y) then
+			local jointDef = b2.createMouseJointDef(ground, object.body, 
+			event.touch.x, event.touch.y, 100000)
+			mouseJoint = self:createJoint(jointDef)
+		end
+	end
+
+	-- update the target of mouse joint on mouse move
+	object.onDragMove = function(self, event)
+		if mouseJoint ~= nil then
+			mouseJoint:setTarget(event.touch.x, event.touch.y)
+		end
+	end
+
+
+	-- destroy the mouse joint on mouse up
+	object.onDragEnd = function(self, event)
+		if mouseJoint ~= nil then
+			self:destroyJoint(mouseJoint)
+			mouseJoint = nil
+		end
+	end
+
+	-- register for mouse events
+	object:addEventListener(Event.TOUCHES_BEGIN, object.onDragStart, self)
+	object:addEventListener(Event.TOUCHES_MOVE, object.onDragMove, self)
+	object:addEventListener(Event.TOUCHES_END, object.onDragEnd, self)
+end
+
+function b2.World:undoDraggable(object)
+	-- register for mouse events
+	object:removeEventListener(Event.TOUCHES_BEGIN, object.onDragStart, self)
+	object:removeEventListener(Event.TOUCHES_MOVE, object.onDragMove, self)
+	object:removeEventListener(Event.TOUCHES_END, object.onDragEnd, self)
+	object.onDragStart = nil
+	object.onDragMove = nil
+	object.onDragEnd = nil
+end
+
+function b2.World:createRectangle(object, config)
+	
+	self.conf = {
+		type = "static",
+		density = 1.0,
+		friction = 1.0,
+		resitution = 0.2,
+		update = true,
+		draggable = false
+	}
+	
+	if config then
+		--copying configuration
+		for key,value in pairs(config) do
+			self.conf[key]= value
+		end
+	end
+	
+	if self.conf.update then
+		self.sprites[#self.sprites+1] = object
+	end
+	
+	object:setAnchorPoint(0.5, 0.5)
+	
+	local setType = b2.STATIC_BODY
+	if self.conf.type == "dynamic" then
+		setType = b2.DYNAMIC_BODY
+	elseif self.conf.type == "kinematic" then
+		setType = b2.KINEMATIC_BODY
+	end
+	
+	--create box2d physical object
+    local body = self:createBody{type = setType}
+	
+    local poly = b2.PolygonShape.new()
+    poly:setAsBox(object:getWidth()/2, object:getHeight()/2)
+	
+    local fixture = body:createFixture{shape = poly, density = self.conf.density, 
+    friction = self.conf.friction, restitution = self.conf.resitution}
+	
+	if object then
+		body:setPosition(object:getX(), object:getY())
+		body:setAngle(math.rad(object:getRotation()))
+		object.body = body
+		if self.conf.type == "dynamic" and self.conf.draggable then
+			self:makeDraggable(object)
+		end
+	end
+	
+	body.userdata = {}
+	body.joints = {}
+	
+end
+
+function b2.World:createCircle(object, config)
+	
+	self.conf = {
+		type = "static",
+		density = 1.0,
+		friction = 1.0,
+		resitution = 0.2,
+		update = true,
+		draggable = false
+	}
+	
+	if config then
+		--copying configuration
+		for key,value in pairs(config) do
+			self.conf[key]= value
+		end
+	end
+	
+	if self.conf.update then
+		self.sprites[#self.sprites+1] = object
+	end
+	
+	local setType = b2.STATIC_BODY
+	if self.conf.type == "dynamic" then
+		setType = b2.DYNAMIC_BODY
+	elseif self.conf.type == "kinematic" then
+		setType = b2.KINEMATIC_BODY
+	end
+	
+	object:setAnchorPoint(0.5, 0.5)
+	
+	--create box2d physical object
+    local body = self:createBody{type = setType}
+	
+    local circle = b2.CircleShape.new(0, 0, object:getWidth()/2)
+	
+    local fixture = body:createFixture{shape = circle, density = self.conf.density, 
+    friction = self.conf.friction, restitution = self.conf.resitution}
+	
+	if object then
+		body:setPosition(object:getX(), object:getY())
+		body:setAngle(math.rad(object:getRotation()))
+		object.body = body
+		if self.conf.type == "dynamic" and self.conf.draggable then
+			self:makeDraggable(object)
+		end
+	end
+	
+	body.userdata = {}
+	body.joints = {}
+	
+end
+
+function b2.World:createTerrain(object, vertices, config)
+	
+	self.conf = {
+		type = "static",
+		density = 1.0,
+		friction = 1.0,
+		resitution = 0.2,
+		update = true,
+		draggable = false
+	}
+	
+	if config then
+		--copying configuration
+		for key,value in pairs(config) do
+			self.conf[key]= value
+		end
+	end
+	
+	if object and self.conf.update then
+		self.sprites[#self.sprites+1] = object
+	end
+	
+	local setType = b2.STATIC_BODY
+	if self.conf.type == "dynamic" then
+		setType = b2.DYNAMIC_BODY
+	elseif self.conf.type == "kinematic" then
+		setType = b2.KINEMATIC_BODY
+	end
+	
+	--create box2d physical object
+    local body = self:createBody{type = setType}
+	
+	local chain = b2.ChainShape.new()
+	chain:createChain(unpack(vertices))
+	
+    local fixture = body:createFixture{shape = chain, density = self.conf.density, 
+    friction = self.conf.friction, restitution = self.conf.resitution}
+	
+	if object then
+		body:setPosition(object:getX(), object:getY())
+		body:setAngle(math.rad(object:getRotation()))
+		object.body = body
+		if self.conf.type == "dynamic" and self.conf.draggable then
+			self:makeDraggable(object)
+		end
+	end
+	
+	body.userdata = {}
+	body.joints = {}
+	
+end
+
+function b2.World:update()
+	-- edit the step values if required. These are good defaults!
+    self:step(1/60, 8, 3)
+    --iterate through all child sprites
+	local sprites = #self.sprites
+    for i = 1, sprites do
+        --get specific sprite
+        local sprite = self.sprites[i]
+        -- check if sprite HAS a body (ie, physical object reference we added)
+        if sprite.body then
+            --update position to match box2d world object's position
+            --get physical body reference
+            local body = sprite.body
+            --get body coordinates
+            local bodyX, bodyY = body:getPosition()
+            --apply coordinates to sprite
+            sprite:setPosition(bodyX, bodyY)
+            --apply rotation to sprite
+            sprite:setRotation(math.deg(body:getAngle()))
+        end
+    end
+end
+
+function b2.World:getDebug()
+	--set up debug drawing
+    local debugDraw = b2.DebugDraw.new()
+	debugDraw:setFlags(b2.DebugDraw.SHAPE_BIT + b2.DebugDraw.JOINT_BIT)
+    self:setDebugDraw(debugDraw)
+    return debugDraw
+end
+
+function b2.Body:setData(key, value)
+	self.userdata[key] = value
+end
+
+function b2.Body:getData(key)
+	return self.userdata[key]
+end

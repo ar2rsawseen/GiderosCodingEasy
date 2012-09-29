@@ -538,7 +538,7 @@ end
 
 --[[ chaining ]]--
 
-changeAllSetFunctions(MovieClip)
+changeAllSetFunctions(SoundChannel)
 
 SoundChannel.__stop =  SoundChannel.stop
 function SoundChannel:stop(...)

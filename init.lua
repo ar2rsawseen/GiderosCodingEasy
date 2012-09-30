@@ -94,6 +94,88 @@ end
 
 changeAllSetFunctions(Sprite)
 
+--[[ anchor points ]]--
+
+function Sprite:_testAnchor()
+	if not self._anchorX then
+		self._anchorX = 0
+		self._anchorY = 0
+		self._offX = 0
+		self._offY = 0
+	end
+end
+
+function Sprite:getAnchorPoint()
+	self:_testAnchor()
+	return self._anchorX, self._anchorY
+end
+
+function Sprite:setAnchorPoint(x, y)
+	y = y or x
+	self._anchorX = x
+	self._anchorY = y
+	
+	local angle = self:getRotation()
+	self:_setRotation(0)
+	local curX = self:get("x")
+	local curY = self:get("y")
+	
+	self._offX = -self:getWidth() * self._anchorX
+	self._offY = -self:getHeight() * self._anchorY
+	
+	self:_setRotation(angle)
+	
+	local cosine = math.cos(math.rad(angle))
+	local sine = math.sin(math.rad(angle))
+	
+	local dx = -self._offX - (-self._offX * cosine + self._offY * sine)
+	local dy = -self._offY - (-self._offY * cosine - self._offX * sine)
+	
+	self._offX = self._offX + dx
+	self._offY = self._offY + dy
+	
+	self:_set("x", curX + self._offX)
+	self:_set("y", curY + self._offY)
+	
+	return self
+end
+
+Sprite._setRotation = Sprite.setRotation
+
+function Sprite:setRotation(angle)
+
+	self:_setRotation(angle)
+	
+	self:setAnchorPoint(self:getAnchorPoint())
+	
+	return self
+end
+
+Sprite._get = Sprite.get
+
+function Sprite:get(param)
+	self:_testAnchor()
+	if param == "x" then
+		return self:_get("x") - self._offX
+	elseif param == "y" then
+		return self:_get("y") - self._offY
+	else
+		return self:_get(param)
+	end
+end
+
+function Sprite:getX()
+	return self:get("x")
+end
+
+function Sprite:getY()
+	return self:get("y")
+end
+
+function Sprite:getPosition()
+	return self:get("x"), self:get("y")
+end
+
 --[[ z-axis manipulations ]]--
 
 function Sprite:bringToFront()
@@ -137,33 +219,42 @@ end
 Sprite._set = Sprite.set
 
 function Sprite:set(param, value)
+	self:_testAnchor()
 	if Sprite.transform[param] then
 		local matrix = self:getMatrix()
 		matrix[param](matrix, value)
 		self:setMatrix(matrix)
 	else
-		if param == "x" and type(value) == "string" then
-			local _, _, width, height = self:getBounds(stage)
-			local xPosition = {
-				left = 0,
-				center = (application:getContentWidth() - width)/2,
-				right = application:getContentWidth() - width
-			}
-			value = xPosition[value]
-			if not value then
-				error("Invalid position name")
+		if param == "x" then
+			if type(value) == "string" then
+				local _, _, width, height = self:getBounds(stage)
+				local xPosition = {
+					left = 0,
+					center = (application:getContentWidth() - width)/2,
+					right = application:getContentWidth() - width
+				}
+				value = xPosition[value]
+				if not value then
+					error("Invalid position name")
+				end
+			else
+				value = value + self._offX
 			end
 		end
-		if param == "y" and type(value) == "string" then
-			local _, _, width, height = self:getBounds(stage)
-			local yPosition = {
-				top = 0,
-				center = (application:getContentHeight() - height)/2,
-				bottom = application:getContentHeight() - height
-			}
-			value = yPosition[value]
-			if not value then
-				error("Invalid position name")
+		if param == "y" then
+			if type(value) == "string" then
+				local _, _, width, height = self:getBounds(stage)
+				local yPosition = {
+					top = 0,
+					center = (application:getContentHeight() - height)/2,
+					bottom = application:getContentHeight() - height
+				}
+				value = yPosition[value]
+				if not value then
+					error("Invalid position name")
+				end
+			else
+				value = value + self._offY
 			end
 		end
 		Sprite._set(self, param, value)
@@ -550,10 +641,6 @@ end
 	MATRIX EXTENSIONS
 ]]--
 
---[[
-	SOUNDSCHANNEL EXTENSIONS
-]]--
-
 --[[ chaining ]]--
 
 changeAllSetFunctions(Matrix)
@@ -907,7 +994,9 @@ function b2.World:createRectangle(object, config)
 		friction = 1.0,
 		resitution = 0.2,
 		update = true,
-		draggable = false
+		draggable = false,
+		width = nil,
+		height = nil
 	}
 	
 	if config then
@@ -918,7 +1007,8 @@ function b2.World:createRectangle(object, config)
 	end
 	
 	if self.conf.update then
-		self.sprites[#self.sprites+1] = object
+		object.id = #self.sprites+1
+		self.sprites[object.id] = object
 	end
 	
 	object:setAnchorPoint(0.5, 0.5)
@@ -933,20 +1023,28 @@ function b2.World:createRectangle(object, config)
 	--create box2d physical object
     local body = self:createBody{type = setType}
 	
+	local angle = object:getRotation()
+	object:setRotation(0)
+	
+	local width = self.conf.width or object:getWidth()
+	local height = self.conf.height or object:getHeight()
+	
     local poly = b2.PolygonShape.new()
-    poly:setAsBox(object:getWidth()/2, object:getHeight()/2)
+    poly:setAsBox(width/2, height/2)
 	
     local fixture = body:createFixture{shape = poly, density = self.conf.density, 
     friction = self.conf.friction, restitution = self.conf.resitution}
 	
 	if object then
 		body:setPosition(object:getX(), object:getY())
-		body:setAngle(math.rad(object:getRotation()))
+		body:setAngle(math.rad(angle))
 		object.body = body
 		if self.conf.type == "dynamic" and self.conf.draggable then
 			self:makeDraggable(object)
 		end
 	end
+	
+	object:setRotation(angle)
 	
 	body.userdata = {}
 	body.joints = {}
@@ -961,7 +1059,8 @@ function b2.World:createCircle(object, config)
 		friction = 1.0,
 		resitution = 0.2,
 		update = true,
-		draggable = false
+		draggable = false,
+		radius = nil
 	}
 	
 	if config then
@@ -972,7 +1071,8 @@ function b2.World:createCircle(object, config)
 	end
 	
 	if self.conf.update then
-		self.sprites[#self.sprites+1] = object
+		object.id = #self.sprites+1
+		self.sprites[object.id] = object
 	end
 	
 	local setType = b2.STATIC_BODY
@@ -986,20 +1086,26 @@ function b2.World:createCircle(object, config)
 	
 	--create box2d physical object
     local body = self:createBody{type = setType}
+	local angle = object:getRotation()
+	object:setRotation(0)
 	
-    local circle = b2.CircleShape.new(0, 0, object:getWidth()/2)
+	local radius = self.conf.radius or object:getWidth()/2
+	
+    local circle = b2.CircleShape.new(0, 0, radius)
 	
     local fixture = body:createFixture{shape = circle, density = self.conf.density, 
     friction = self.conf.friction, restitution = self.conf.resitution}
 	
 	if object then
 		body:setPosition(object:getX(), object:getY())
-		body:setAngle(math.rad(object:getRotation()))
+		body:setAngle(math.rad(angle))
 		object.body = body
 		if self.conf.type == "dynamic" and self.conf.draggable then
 			self:makeDraggable(object)
 		end
 	end
+	
+	object:setRotation(angle)
 	
 	body.userdata = {}
 	body.joints = {}
@@ -1025,7 +1131,8 @@ function b2.World:createTerrain(object, vertices, config)
 	end
 	
 	if object and self.conf.update then
-		self.sprites[#self.sprites+1] = object
+		object.id = #self.sprites+1
+		self.sprites[object.id] = object
 	end
 	
 	local setType = b2.STATIC_BODY
@@ -1087,6 +1194,19 @@ function b2.World:getDebug()
 	debugDraw:setFlags(b2.DebugDraw.SHAPE_BIT + b2.DebugDraw.JOINT_BIT)
     self:setDebugDraw(debugDraw)
     return debugDraw
+end
+
+function b2.World:removeBody(object)
+	if object.body then
+		if object.id then
+			self.sprites[object.id] = nil
+		end
+		Timer.delayedCall(1, function()
+			self:destroyBody(object.body)
+		end)
+		object.body = nil
+		object:removeFromParent()
+	end
 end
 
 function b2.Body:setData(key, value)

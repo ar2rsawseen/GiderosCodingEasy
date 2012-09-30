@@ -9,9 +9,12 @@ application:setBackgroundColor("yellow")
 
 local text = TextField.new(nil, "Some text")
 	--positioning
-	:setPosition("center", "center")
+	--:setPosition("center", "center")
+	:setPosition(100,100)
 	--named colors
 	:setTextColor("white")
+	:setAnchorPoint(0.5)
+	:setRotation(45)
 	
 local test = Shape.new()
 	:setFillStyle(Shape.SOLID, "white", 0.5)
@@ -19,6 +22,8 @@ local test = Shape.new()
 	:setPosition(100, 100)
 	:setAnchorPoint(0.5)
 	:setRotation(45)
+	
+print(test:getPosition())
 
 local bitmap = Bitmap.new("crate.png")
 	:setPosition(100,100)
@@ -47,7 +52,6 @@ local crate = Bitmap.new("crate.png", true)
 
 --create rectangle based on image
 world:createRectangle(crate, {type = "dynamic"})
-world:createRectangle(test, {type = "dynamic"})
 
 --place image on screen
 local ball = Bitmap.new("ball.png", true)
@@ -64,9 +68,9 @@ world:createTerrain(nil, {0,0,
 	0,0})
 
 stage:addChild(text)
+	 :addChild(shape)
 	 :addChild(bitmap)
 	 :addChild(test)
-	 --:addChild(shape)
 	 :addChild(crate)
 	 :addChild(ball)
 	 --debugging world

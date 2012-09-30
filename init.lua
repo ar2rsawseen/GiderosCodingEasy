@@ -134,8 +134,19 @@ function Sprite:setAnchorPoint(x, y)
 	self._offX = self._offX + dx
 	self._offY = self._offY + dy
 	
-	self:_set("x", curX + self._offX)
-	self:_set("y", curY + self._offY)
+	local newX = curX + self._offX
+	local newY = curY + self._offY
+	
+	--baseline fix
+	if self._baseX then
+		newX = newX - self._baseX
+	end
+	if self._baseY then
+		newY = newY - self._baseY
+	end
+	
+	self:_set("x", newX)
+	self:_set("y", newY)
 	
 	return self
 end
@@ -156,9 +167,19 @@ Sprite._get = Sprite.get
 function Sprite:get(param)
 	self:_testAnchor()
 	if param == "x" then
-		return self:_get("x") - self._offX
+		local x = self:_get("x")
+		--baseline fix
+		if self._baseX then
+			x = x - self._baseX
+		end
+		return x - self._offX
 	elseif param == "y" then
-		return self:_get("y") - self._offY
+		local y = self:_get("y")
+		--baseline fix
+		if self._baseY then
+			y = y + self._baseY
+		end
+		return y - self._offY
 	else
 		return self:_get(param)
 	end
@@ -238,10 +259,13 @@ function Sprite:set(param, value)
 					error("Invalid position name")
 				end
 			else
+				--baseline fix
+				if self._baseX then
+					value = value - self._baseX
+				end
 				value = value + self._offX
 			end
-		end
-		if param == "y" then
+		elseif param == "y" then
 			if type(value) == "string" then
 				local _, _, width, height = self:getBounds(stage)
 				local yPosition = {
@@ -254,6 +278,10 @@ function Sprite:set(param, value)
 					error("Invalid position name")
 				end
 			else
+				--baseline fix
+				if self._baseY then
+					value = value - self._baseY
+				end
 				value = value + self._offY
 			end
 		end
@@ -423,6 +451,18 @@ changeAllSetFunctions(Bitmap)
 --[[
 	TEXTFIELD EXTENSIONS
 ]]--
+
+--[[ baseline fix ]]--
+
+TextField._BLnew = TextField.new
+
+function TextField.new(...)
+	local text = TextField._BLnew(...)
+	
+	text._baseX, text._baseY = text:getBounds(stage)
+	
+	return text
+end
 
 --[[ chaining ]]--
 

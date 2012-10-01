@@ -1,9 +1,7 @@
+require "box2d"
 
 --some initial settings
 application:setBackgroundColor("yellow")
-			:setOrientation("portrait")
-			:setLogicalDimensions(320, 480)
-			:setScaleMode("letterbox")
 			:setFps(60)
 			:setKeepAwake(true)
 
@@ -23,8 +21,16 @@ local test = Shape.new()
 	:setAnchorPoint(0.5)
 	:setRotation(45)
 
-local bitmap = Bitmap.new("crate.png")
-	:setPosition(100,100)
+--[[local bitmap = Bitmap.new("crate.png")
+	:setPosition("center","top")
+	:setAnchorPoint(0.5)]]
+	
+local bitmap = Shape.new()
+	:setFillStyle(Shape.SOLID, "red")
+	:drawRectangle(100,100)
+	:setAnchorPoint(0.5)
+	:setAbsolutePosition("right", "bottom")
+	--:setPosition("center","bottom")
 
 local shape = Shape.new()
 	--named colors

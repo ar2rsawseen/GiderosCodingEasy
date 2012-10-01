@@ -529,6 +529,133 @@ function Shape:drawRect(width, height)
 	})
 end
 
+--[[ arcs and curves ]]--
+
+local function bezier3(p1,p2,p3,mu)
+   local mum1,mum12,mu2
+   local p = {}
+   mu2 = mu * mu
+   mum1 = 1 - mu
+   mum12 = mum1 * mum1
+   p.x = p1.x * mum12 + 2 * p2.x * mum1 * mu + p3.x * mu2
+   p.y = p1.y * mum12 + 2 * p2.y * mum1 * mu + p3.y * mu2
+   return p
+end
+
+local function bezier4(p1,p2,p3,p4,mu)
+   local mum1,mum13,mu3;
+   local p = {}
+   mum1 = 1 - mu
+   mum13 = mum1 * mum1 * mum1
+   mu3 = mu * mu * mu
+   p.x = mum13*p1.x + 3*mu*mum1*mum1*p2.x + 3*mu*mu*mum1*p3.x + mu3*p4.x
+   p.y = mum13*p1.y + 3*mu*mum1*mum1*p2.y + 3*mu*mu*mum1*p3.y + mu3*p4.y
+   return p     
+end
+
+local function quadraticCurve(startx, starty, cpx, cpy, x, y, mu)
+	local inc = mu or 0.1 -- need a better default
+	local t = {}
+	for i = 0,1,inc do
+		local p = bezier3(
+			{ x=startx, y=starty },
+			{ x=cpx, y=cpy },
+			{ x=x, y=y },
+		i)
+		t[#t+1] = p.x
+		t[#t+1] = p.y
+	end
+	return t
+end
+
+Shape._new = Shape.new
+
+function Shape.new()
+	local shape = Shape._new()
+	shape._lastPoint = nil
+	shape._allPoints = {}
+	return shape
+end
+
+Shape._moveTo = Shape.moveTo
+
+function Shape:moveTo(x,y)
+	self:_moveTo(x, y)
+	self._lastPoint = { x, y }
+	self._allPoints[#self._allPoints] = x
+	self._allPoints[#self._allPoints] = y
+	return self
+end
+
+Shape._lineTo = Shape.lineTo
+
+function Shape:lineTo(x,y)
+	self:_lineTo(x, y)
+	self._lastPoint = { x, y }
+	self._allPoints[#self._allPoints] = x
+	self._allPoints[#self._allPoints] = y
+	return self
+end
+
+Shape._clear = Shape.clear
+
+function Shape:clear()
+	Shape._clear()
+	self._allPoints = {}
+	return self
+end
+
+function Shape:getPoints()
+	return self._allPoints
+end
+
+function Shape:quadraticCurveTo(cpx, cpy, x, y, mu)
+	if self._lastPoint then
+		local points = quadraticCurve(self._lastPoint[1], self._lastPoint[2], cpx, cpy, x, y, mu)
+		for i = 1, #points, 2 do
+			self:_lineTo(points[i],points[i+1])
+		end
+	end
+	self._lastPoint = { x, y }
+	return self
+end
+
+function Shape:bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y, mu)
+	if self._lastPoint then
+		local inc = mu or 0.1 -- need a better default
+		for i = 0,1,inc do  
+			local p = bezier4(
+				{ x=self._lastPoint[1], y=self._lastPoint[2] },
+				{ x=cp1x, y=cp1y },
+				{ x=cp2x, y=cp2y },
+				{ x=x, y=y },
+			i)
+			self:_lineTo(p.x,p.y)
+		end
+	end
+	self._lastPoint = { x, y }
+end
+
+function Shape:drawRoundRectangle(width, height, radius)
+	self:beginPath()
+	self:moveTo(0, radius)
+		:lineTo(0, height - radius)
+		:quadraticCurveTo(0, height, 
+			radius, height)
+		:lineTo(width - radius, height)
+		:quadraticCurveTo(width, height, 
+			width, height - radius)
+		:lineTo(width, radius)
+		:quadraticCurveTo(width, 0, 
+			width - radius, 0)
+		:lineTo(radius, 0)
+		:quadraticCurveTo(0, 0, 
+			0, radius)
+	self:closePath()
+	self:endPath()
+	return self
+end
+
 --[[ draw elipse from ndoss ]]--
 
 function Shape:drawEllipse(x,y,xradius,yradius,startAngle,endAngle,anticlockwise)
@@ -1046,12 +1173,10 @@ function b2.World:createRectangle(object, config)
 		end
 	end
 	
-	if self.conf.update then
+	if object and self.conf.update then
 		object.id = #self.sprites+1
 		self.sprites[object.id] = object
 	end
-	
-	object:setAnchorPoint(0.5, 0.5)
 	
 	local setType = b2.STATIC_BODY
 	if self.conf.type == "dynamic" then
@@ -1063,8 +1188,11 @@ function b2.World:createRectangle(object, config)
 	--create box2d physical object
     local body = self:createBody{type = setType}
 	
-	local angle = object:getRotation()
-	object:setRotation(0)
+	local angle
+	if object then
+		angle = object:getRotation()
+		object:setRotation(0)
+	end
 	
 	local width = self.conf.width or object:getWidth()
 	local height = self.conf.height or object:getHeight()
@@ -1076,15 +1204,15 @@ function b2.World:createRectangle(object, config)
     friction = self.conf.friction, restitution = self.conf.resitution}
 	
 	if object then
+		object:setAnchorPoint(0.5, 0.5)
 		body:setPosition(object:getX(), object:getY())
 		body:setAngle(math.rad(angle))
 		object.body = body
 		if self.conf.type == "dynamic" and self.conf.draggable then
 			self:makeDraggable(object)
 		end
+		object:setRotation(angle)
 	end
-	
-	object:setRotation(angle)
 	
 	body.userdata = {}
 	body.joints = {}
@@ -1110,7 +1238,7 @@ function b2.World:createCircle(object, config)
 		end
 	end
 	
-	if self.conf.update then
+	if object and self.conf.update then
 		object.id = #self.sprites+1
 		self.sprites[object.id] = object
 	end
@@ -1122,12 +1250,13 @@ function b2.World:createCircle(object, config)
 		setType = b2.KINEMATIC_BODY
 	end
 	
-	object:setAnchorPoint(0.5, 0.5)
-	
 	--create box2d physical object
     local body = self:createBody{type = setType}
-	local angle = object:getRotation()
-	object:setRotation(0)
+	local angle
+	if object then
+		angle = object:getRotation()
+		object:setRotation(0)
+	end
 	
 	local radius = self.conf.radius or object:getWidth()/2
 	
@@ -1137,20 +1266,113 @@ function b2.World:createCircle(object, config)
     friction = self.conf.friction, restitution = self.conf.resitution}
 	
 	if object then
+		object:setAnchorPoint(0.5, 0.5)
 		body:setPosition(object:getX(), object:getY())
 		body:setAngle(math.rad(angle))
 		object.body = body
 		if self.conf.type == "dynamic" and self.conf.draggable then
 			self:makeDraggable(object)
 		end
+		object:setRotation(angle)
 	end
-	
-	object:setRotation(angle)
 	
 	body.userdata = {}
 	body.joints = {}
 	
 end
+
+--[[function b2.World:createRoundRectangle(object, width, height, radius, config)
+	
+	self.conf = {
+		type = "static",
+		density = 1.0,
+		friction = 1.0,
+		resitution = 0.2,
+		update = true,
+		draggable = false
+	}
+	
+	if config then
+		--copying configuration
+		for key,value in pairs(config) do
+			self.conf[key]= value
+		end
+	end
+	
+	if object and self.conf.update then
+		object.id = #self.sprites+1
+		self.sprites[object.id] = object
+	end
+	
+	local setType = b2.STATIC_BODY
+	if self.conf.type == "dynamic" then
+		setType = b2.DYNAMIC_BODY
+	elseif self.conf.type == "kinematic" then
+		setType = b2.KINEMATIC_BODY
+	end
+	
+	--create box2d physical object
+    local body = self:createBody{type = setType}
+	
+	local chain = b2.ChainShape.new()
+	local vertices = {}
+	local startW = -width/2
+	local startH = -height/2
+	local endW = width/2
+	local endH = height/2
+	vertices[#vertices+1] = startW
+	vertices[#vertices+1] = startH + radius
+	vertices[#vertices+1] = startW
+	vertices[#vertices+1] = endH - radius
+	local points = quadraticCurve(startW, endH - radius,
+			startW, endH, 
+			startW + radius, endH)
+	for i = 1, #points do
+		vertices[#vertices+1] = points[i]
+	end
+	vertices[#vertices+1] = endW - radius
+	vertices[#vertices+1] = endH
+	local points = quadraticCurve(endW - radius, endH,
+			endW, endH, 
+			endW, endH - radius)
+	for i = 1, #points do
+		vertices[#vertices+1] = points[i]
+	end
+	
+	vertices[#vertices+1] = endW
+	vertices[#vertices+1] = startH + radius
+	local points = quadraticCurve(endW, startH + radius,
+			endW, startH, 
+			endW - radius, startH)
+	for i = 1, #points do
+		vertices[#vertices+1] = points[i]
+	end
+	vertices[#vertices+1] = startW + radius
+	vertices[#vertices+1] = startH
+	local points = quadraticCurve(startW + radius, startH,
+			startW, startH, 
+			startW, startH + radius)
+	for i = 1, #points do
+		vertices[#vertices+1] = points[i]
+	end
+	chain:createChain(unpack(vertices))
+	
+    local fixture = body:createFixture{shape = chain, density = self.conf.density, 
+    friction = self.conf.friction, restitution = self.conf.resitution}
+	
+	if object then
+		body:setPosition(object:getX(), object:getY())
+		body:setAngle(math.rad(object:getRotation()))
+		object.body = body
+		if self.conf.type == "dynamic" and self.conf.draggable then
+			self:makeDraggable(object)
+		end
+	end
+	
+	body.userdata = {}
+	body.joints = {}
+	
+end]]
 
 function b2.World:createTerrain(object, vertices, config)
 	

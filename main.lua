@@ -18,12 +18,10 @@ local text = TextField.new(nil, "Some text")
 	
 local test = Shape.new()
 	:setFillStyle(Shape.SOLID, "white", 0.5)
-	:drawRect(90, 90)
+	:drawRoundRectangle(90, 90, 10)
 	:setPosition(100, 100)
 	:setAnchorPoint(0.5)
 	:setRotation(45)
-	
-print(test:getPosition())
 
 local bitmap = Bitmap.new("crate.png")
 	:setPosition(100,100)
@@ -52,6 +50,11 @@ local crate = Bitmap.new("crate.png", true)
 
 --create rectangle based on image
 world:createRectangle(crate, {type = "dynamic"})
+
+--world:createRoundRectangle(test, 90, 90, 10, {type = "dynamic", draggable = true})
+--[[world:createTerrain(test, {
+	0,0,90,0,90,90,0,90,0,0
+}, {type = "dynamic", draggable = true})]]
 
 --place image on screen
 local ball = Bitmap.new("ball.png", true)

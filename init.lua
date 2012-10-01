@@ -480,7 +480,7 @@ TexturePack._new = TexturePack.new
 function TexturePack.new(...)
 	
 	local pack
-	if type(arg[1] == "string") then
+	if type(arg[1]) == "string" then
 		pack = TexturePack._new(arg[1]..".txt", arg[1]..".png")
 	else
 		pack = TexturePack._new(...)
@@ -499,7 +499,7 @@ Bitmap._new = Bitmap.new
 
 function Bitmap.new(...)
 	
-	if type(arg[1] == "string") then
+	if type(arg[1]) == "string" then
 		arg[1] = Texture.new(unpack(arg))
 	end
 	

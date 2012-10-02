@@ -2,6 +2,7 @@
  <properties autorotation="0" fps="60" scaleMode="3" iosDevice="0" packageName="com.yourdomain.yourapp" logicalHeight="800" logicalWidth="480" retinaDisplay="0" assetsOnly="0" orientation="1" architecture="0">
   <imageScales/>
  </properties>
+ <file source="tahoma.ttf"/>
  <file source="ball.png"/>
  <file source="crate.png"/>
  <file source="main.lua"/>

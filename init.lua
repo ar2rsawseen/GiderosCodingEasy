@@ -283,6 +283,29 @@ function Sprite:setIndex(index)
 	return self
 end
 
+function Sprite:getIndex()
+	local parent = self:getParent()
+	if parent then
+		return parent:getChildIndex(self)
+	end
+end
+
+function Sprite:addChildBefore(child, reference)
+	local index = self:getChildIndex(reference)
+	return self:addChildAt(child, index-1)
+end
+
+function Sprite:addChildAfter(child, reference)
+	local index = self:getChildIndex(reference)
+	return self:addChildAt(child, index+1)
+end
+
+function Sprite:replaceChild(existing, newchild)
+	local index = self:getChildIndex(existing)
+	return self:removeChild(existing)
+			   :addChildAt(newchild, index)
+end
+
 --[[ simple collision detection ]]--
 
 function Sprite:collidesWith(sprite2)
@@ -523,21 +546,58 @@ changeAllSetFunctions(Bitmap)
 	TEXTFIELD EXTENSIONS
 ]]--
 
+--[[ chaining ]]--
+
+changeAllSetFunctions(TextField)
+
 --[[ baseline fix ]]--
 
 TextField._BLnew = TextField.new
 
 function TextField.new(...)
-	local text = TextField._BLnew(...)
+	local text = TextField._BLnew(unpack(arg))
+	text._font = arg[1]
+	text._offsetX = 0
+	text._offsetY = 0
 	
 	text._baseX, text._baseY = text:getBounds(stage)
 	
 	return text
 end
 
---[[ chaining ]]--
+--[[ shadow implementation ]]--
 
-changeAllSetFunctions(TextField)
+function TextField:setShadow(offX, offY, color)
+	if not self._real then
+		self._real = TextField.new(self._font, self:getText())
+		self._real:setTextColor(self:getTextColor())
+		self._real:setLetterSpacing(self:getLetterSpacing())
+		self:addChild(self._real)
+	end
+	
+	self._real:setPosition(-offX + self._baseX, -offY + self._baseY)
+	self:setPosition(self:getX() + self._offsetX + offX, self:getY() + self._offsetY + offY)
+	
+	self._offsetX = -offX
+	self._offsetY = -offY
+	
+	if color then
+		self:setTextColor(color)
+		if alpha then
+			self:setAlpha(alpha)
+		end
+	end
+	return self
+end
+
+TextField._setText = TextField.setText
+
+function TextField:setText(text)
+	if self._real then
+		self._real:_setText(text)
+	end
+	return self:_setText(text)
+end
 
 --[[
 	SHAPE EXTENSIONS
@@ -900,6 +960,8 @@ function Application:getAbsoluteHeight()
 	return self.endy - self.starty
 end
 
+--[[ global volume implementation ]]--
+
 function Application:setVolume(volume)
 	self.currentVolume = volume
 	for i = 1, #self.sounds do
@@ -913,6 +975,52 @@ function Application:getVolume()
 	else
 		return 1
 	end
+end
+
+--[[ global antialising implementation ]]--
+
+function Application:enableFiltering()
+	self._filtering = true
+	return self
+end
+
+function Application:disableFiltering()
+	self._filtering = false
+	return self
+end
+
+function Application:isFilteringEnabled()
+	return self._filtering
+end
+
+Font._new = Font.new
+
+function Font.new(...)
+	if arg[3] == nil then
+		arg[3] = application:isFilteringEnabled()
+	end
+	local font = Font._new(unpack(arg))
+	return font
+end
+
+TTFont._new = TTFont.new
+
+function TTFont.new(...)
+	if arg[3] == nil then
+		arg[3] = application:isFilteringEnabled()
+	end
+	local font = TTFont._new(unpack(arg))
+	return font
+end
+
+Texture._new = Texture.new
+
+function Texture.new(...)
+	if arg[2] == nil then
+		arg[2] = application:isFilteringEnabled()
+	end
+	local font = Texture._new(unpack(arg))
+	return font
 end
 
 --[[

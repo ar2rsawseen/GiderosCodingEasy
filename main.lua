@@ -4,8 +4,10 @@ require "box2d"
 application:setBackgroundColor("yellow")
 			:setFps(60)
 			:setKeepAwake(true)
+			:enableFiltering()
 
-local text = TextField.new(nil, "Some text")
+local font = TTFont.new("tahoma.ttf", 70)
+local text = TextField.new(font, "Some text")
 	--positioning
 	--:setPosition("center", "center")
 	:setPosition(100,100)
@@ -13,6 +15,7 @@ local text = TextField.new(nil, "Some text")
 	:setTextColor("white")
 	:setAnchorPoint(0.5)
 	:setRotation(45)
+	:setShadow(3, 3, "gray")
 	
 local test = Shape.new()
 	:setFillStyle(Shape.SOLID, "white", 0.5)

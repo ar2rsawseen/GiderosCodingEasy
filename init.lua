@@ -351,6 +351,10 @@ function Sprite:set(param, value)
 			if self._offX then
 				value = value + self._offX
 			end
+			if self.body then
+				local x,y = self.body:getPosition()
+				self.body:setPosition(value, y)
+			end
 		elseif param == "y" then
 			if type(value) == "string" then
 				local _, _, width, height = self:getBounds(stage)
@@ -375,6 +379,12 @@ function Sprite:set(param, value)
 			if self._offY then
 				value = value + self._offY
 			end
+			if self.body then
+				local x,y = self.body:getPosition()
+				self.body:setPosition(x, value)
+			end
+		elseif param == "rotation" and self.body then
+			self.body:setAngle(math.rad(value))
 		end
 		Sprite._set(self, param, value)
 	end
@@ -610,18 +620,6 @@ changeAllSetFunctions(Shape)
 Shape.__beginPath =  Shape.beginPath
 function Shape:beginPath(...)
 	self:__beginPath(...)
-	return self
-end
-
-Shape.__moveTo =  Shape.moveTo
-function Shape:moveTo(...)
-	self:__moveTo(...)
-	return self
-end
-
-Shape.__lineTo =  Shape.lineTo
-function Shape:lineTo(...)
-	self:__lineTo(...)
 	return self
 end
 
@@ -967,6 +965,7 @@ function Application:setVolume(volume)
 	for i = 1, #self.sounds do
 		self.sounds[i]:setVolume(volume)
 	end
+	return self
 end
 
 function Application:getVolume()
@@ -1079,6 +1078,50 @@ function SoundChannel:isPlaying()
 end
 
 --[[
+	URLLOADER EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+UrlLoader.__load =  UrlLoader.load
+function UrlLoader:load(...)
+	self:__load(...)
+	return self
+end
+
+UrlLoader.__close =  UrlLoader.close
+function UrlLoader:close(...)
+	self:__close(...)
+	return self
+end
+
+--[[
+	TIMER EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+changeAllSetFunctions(Timer)
+
+Timer.__start =  Timer.start
+function Timer:start(...)
+	self:__start(...)
+	return self
+end
+
+Timer.__stop =  Timer.stop
+function Timer:stop(...)
+	self:__stop(...)
+	return self
+end
+
+Timer.__reset =  Timer.reset
+function Timer:reset(...)
+	self:__reset(...)
+	return self
+end
+
+--[[
 	MATRIX EXTENSIONS
 ]]--
 
@@ -1158,6 +1201,14 @@ end
 function Matrix:reset()
 	return self:setElements(1, 0, 0, 1, 0, 0)
 end
+
+--[[
+	TEXTINPUTDIALOG EXTENSIONS
+]]--
+
+--[[ chaining ]]--
+
+changeAllSetFunctions(TextInputDialog)
 
 --[[
 	MOUSE/TOUCH EVENTS CROSSCOMPATABILITY
@@ -1376,7 +1427,101 @@ function loadPhysicsExtension()
 		local world = b2.World._new(...)
 		world.sprites = {}
 		world.curSprite = 1
+		world.beginCallbacks = {}
+		world.endCallbacks = {}
+		world:addEventListener(Event.BEGIN_CONTACT, world._handleBeginContact, world)
+		world:addEventListener(Event.END_CONTACT, world._handleEndContact, world)
 		return world
+	end
+	
+	function b2.World:_handleBeginContact(e)
+		--getting contact bodies
+		local fixtureA = e.fixtureA
+		local fixtureB = e.fixtureB
+		local bodyA = fixtureA:getBody()
+		local bodyB = fixtureB:getBody()
+		
+		local collisionHandler
+		if self.beginCallbacks[bodyA] and self.beginCallbacks[bodyA][bodyB] then
+			collisionHandler = self.beginCallbacks[bodyA][bodyB]
+			object1 = bodyA.object
+			object2 = bodyB.object
+		elseif self.beginCallbacks[bodyB] and self.beginCallbacks[bodyB][bodyA] then
+			collisionHandler = self.beginCallbacks[bodyB][bodyA]
+			object1 = bodyB.object
+			object2 = bodyA.object
+		end
+		
+		if collisionHandler then
+			if collisionHandler.data then
+				collisionHandler.callback(collisionHandler.data, object1, object2, e)
+			else
+				collisionHandler.callback(object1, object2, e)
+			end
+		end
+	end
+	
+	function b2.World:_handleEndContact(e)
+		--getting contact bodies
+		local fixtureA = e.fixtureA
+		local fixtureB = e.fixtureB
+		local bodyA = fixtureA:getBody()
+		local bodyB = fixtureB:getBody()
+		
+		local collisionHandler, object1, object2
+		if self.endCallbacks[bodyA] and self.endCallbacks[bodyA][bodyB] then
+			collisionHandler = self.endCallbacks[bodyA][bodyB]
+			object1 = bodyA.object
+			object2 = bodyB.object
+		elseif self.endCallbacks[bodyB] and self.endCallbacks[bodyB][bodyA] then
+			collisionHandler = self.endCallbacks[bodyB][bodyA]
+			object1 = bodyB.object
+			object2 = bodyA.object
+		end
+		
+		if collisionHandler then
+			if collisionHandler.data then
+				collisionHandler.callback(collisionHandler.data, object1, object2, e)
+			else
+				collisionHandler.callback(object1, object2, e)
+			end
+		end
+	end
+	
+	function b2.World:addBeginContact(object1, object2, callback, data)
+		local body1 = object1.body
+		local body2 = object2.body
+		if not self.beginCallbacks[body1] then
+			self.beginCallbacks[body1] = {}
+		end
+		if not self.beginCallbacks[body1][body2] then
+			self.beginCallbacks[body1][body2] = {}
+		end
+		local t = {}
+		t.callback = callback
+		if data then
+			t.data = data
+		end
+		self.beginCallbacks[body1][body2] = t
+		return self
+	end
+	
+	function b2.World:addEndContact(object1, object2, callback, data)
+		local body1 = object1.body
+		local body2 = object2.body
+		if not self.endCallbacks[body1] then
+			self.endCallbacks[body1] = {}
+		end
+		if not self.endCallbacks[body1][body2] then
+			self.endCallbacks[body1][body2] = {}
+		end
+		local t = {}
+		t.callback = callback
+		if data then
+			t.data = data
+		end
+		self.endCallbacks[body1][body2] = t
+		return self
 	end
 	
 	function b2.World:makeDraggable(object)
@@ -1416,6 +1561,7 @@ function loadPhysicsExtension()
 		object:addEventListener(Event.TOUCHES_BEGIN, object.onDragStart, self)
 		object:addEventListener(Event.TOUCHES_MOVE, object.onDragMove, self)
 		object:addEventListener(Event.TOUCHES_END, object.onDragEnd, self)
+		return self
 	end
 	
 	function b2.World:undoDraggable(object)
@@ -1426,11 +1572,44 @@ function loadPhysicsExtension()
 		object.onDragStart = nil
 		object.onDragMove = nil
 		object.onDragEnd = nil
+		return self
+	end
+	
+	function b2.World:__enchanceObject(object)
+		--local body = object.body
+		for k,v in pairs(b2.Body) do
+			if type(v) == "function" and not object[k] then
+				if (k:sub(1, 3) == "set" or k:sub(1, 5) == "apply" or k:sub(1, 7) == "destroy") then
+					object[k] = function(self, ...)
+						object.body[k](object.body, ...)
+						return self
+					end
+				else
+					object[k] = function(self, ...)
+						return object.body[k](object.body, ...)
+					end
+				end
+			end
+		end
+		for k,v in pairs(b2.Fixture) do
+			if type(v) == "function" and not object[k] then
+				if (k:sub(1, 3) == "set" or k:sub(1, 5) == "apply" or k:sub(1, 7) == "destroy") then
+					object[k] = function(self, ...)
+						object.body[k](object.body, ...)
+						return self
+					end
+				else
+					object[k] = function(self, ...)
+						return object.body[k](object.body, ...)
+					end
+				end
+			end
+		end
 	end
 	
 	function b2.World:createRectangle(object, config)
 		
-		self.conf = {
+		local conf = {
 			type = "static",
 			density = 1.0,
 			friction = 1.0,
@@ -1444,20 +1623,20 @@ function loadPhysicsExtension()
 		if config then
 			--copying configuration
 			for key,value in pairs(config) do
-				self.conf[key]= value
+				conf[key]= value
 			end
 		end
 		
-		if object and self.conf.update then
+		if object and conf.update then
 			object.id = self.curSprite
 			self.sprites[object.id] = object
 			self.curSprite = self.curSprite + 1
 		end
 		
 		local setType = b2.STATIC_BODY
-		if self.conf.type == "dynamic" then
+		if conf.type == "dynamic" then
 			setType = b2.DYNAMIC_BODY
-		elseif self.conf.type == "kinematic" then
+		elseif conf.type == "kinematic" then
 			setType = b2.KINEMATIC_BODY
 		end
 		
@@ -1470,34 +1649,37 @@ function loadPhysicsExtension()
 			object:setRotation(0)
 		end
 		
-		local width = self.conf.width or object:getWidth()
-		local height = self.conf.height or object:getHeight()
+		local width = conf.width or object:getWidth()
+		local height = conf.height or object:getHeight()
 		
 		local poly = b2.PolygonShape.new()
 		poly:setAsBox(width/2, height/2)
 		
-		local fixture = body:createFixture{shape = poly, density = self.conf.density, 
-		friction = self.conf.friction, restitution = self.conf.resitution}
+		local fixture = body:createFixture{shape = poly, density = conf.density, 
+		friction = conf.friction, restitution = conf.resitution}
 		
 		if object then
 			object:setAnchorPoint(0.5, 0.5)
 			body:setPosition(object:getX(), object:getY())
 			body:setAngle(math.rad(angle))
 			object.body = body
-			if self.conf.type == "dynamic" and self.conf.draggable then
+			body.object = object
+			if conf.type == "dynamic" and conf.draggable then
 				self:makeDraggable(object)
 			end
 			object:setRotation(angle)
+			self:__enchanceObject(object)
 		end
 		
 		body.userdata = {}
 		body.joints = {}
 		
+		return self
 	end
 	
 	function b2.World:createCircle(object, config)
 		
-		self.conf = {
+		local conf = {
 			type = "static",
 			density = 1.0,
 			friction = 1.0,
@@ -1510,20 +1692,20 @@ function loadPhysicsExtension()
 		if config then
 			--copying configuration
 			for key,value in pairs(config) do
-				self.conf[key]= value
+				conf[key]= value
 			end
 		end
 		
-		if object and self.conf.update then
+		if object and conf.update then
 			object.id = self.curSprite
 			self.sprites[object.id] = object
 			self.curSprite = self.curSprite + 1
 		end
 		
 		local setType = b2.STATIC_BODY
-		if self.conf.type == "dynamic" then
+		if conf.type == "dynamic" then
 			setType = b2.DYNAMIC_BODY
-		elseif self.conf.type == "kinematic" then
+		elseif conf.type == "kinematic" then
 			setType = b2.KINEMATIC_BODY
 		end
 		
@@ -1535,32 +1717,35 @@ function loadPhysicsExtension()
 			object:setRotation(0)
 		end
 		
-		local radius = self.conf.radius or object:getWidth()/2
+		local radius = conf.radius or object:getWidth()/2
 		
 		local circle = b2.CircleShape.new(0, 0, radius)
 		
-		local fixture = body:createFixture{shape = circle, density = self.conf.density, 
-		friction = self.conf.friction, restitution = self.conf.resitution}
+		local fixture = body:createFixture{shape = circle, density = conf.density, 
+		friction = conf.friction, restitution = conf.resitution}
 		
 		if object then
 			object:setAnchorPoint(0.5, 0.5)
 			body:setPosition(object:getX(), object:getY())
 			body:setAngle(math.rad(angle))
 			object.body = body
-			if self.conf.type == "dynamic" and self.conf.draggable then
+			body.object = object
+			if conf.type == "dynamic" and conf.draggable then
 				self:makeDraggable(object)
 			end
 			object:setRotation(angle)
+			self:__enchanceObject(object)
 		end
 		
 		body.userdata = {}
 		body.joints = {}
 		
+		return self
 	end
 	
 	--[[function b2.World:createRoundRectangle(object, width, height, radius, config)
 		
-		self.conf = {
+		local conf = {
 			type = "static",
 			density = 1.0,
 			friction = 1.0,
@@ -1572,20 +1757,20 @@ function loadPhysicsExtension()
 		if config then
 			--copying configuration
 			for key,value in pairs(config) do
-				self.conf[key]= value
+				conf[key]= value
 			end
 		end
 		
-		if object and self.conf.update then
+		if object and conf.update then
 			object.id = self.curSprite
 			self.sprites[object.id] = object
 			self.curSprite = self.curSprite + 1
 		end
 		
 		local setType = b2.STATIC_BODY
-		if self.conf.type == "dynamic" then
+		if conf.type == "dynamic" then
 			setType = b2.DYNAMIC_BODY
-		elseif self.conf.type == "kinematic" then
+		elseif conf.type == "kinematic" then
 			setType = b2.KINEMATIC_BODY
 		end
 		
@@ -1635,26 +1820,30 @@ function loadPhysicsExtension()
 		end
 		chain:createChain(unpack(vertices))
 		
-		local fixture = body:createFixture{shape = chain, density = self.conf.density, 
-		friction = self.conf.friction, restitution = self.conf.resitution}
+		local fixture = body:createFixture{shape = chain, density = conf.density, 
+		friction = conf.friction, restitution = conf.resitution}
 		
 		if object then
 			body:setPosition(object:getX(), object:getY())
 			body:setAngle(math.rad(object:getRotation()))
 			object.body = body
-			if self.conf.type == "dynamic" and self.conf.draggable then
+			body.object = object
+			if conf.type == "dynamic" and conf.draggable then
 				self:makeDraggable(object)
 			end
+			self:__enchanceObject(object)
 		end
 		
 		body.userdata = {}
 		body.joints = {}
 		
+		return self
+		
 	end]]
 	
 	function b2.World:createTerrain(object, vertices, config)
 		
-		self.conf = {
+		local conf = {
 			type = "static",
 			density = 1.0,
 			friction = 1.0,
@@ -1666,20 +1855,20 @@ function loadPhysicsExtension()
 		if config then
 			--copying configuration
 			for key,value in pairs(config) do
-				self.conf[key]= value
+				conf[key]= value
 			end
 		end
 		
-		if object and self.conf.update then
+		if object and conf.update then
 			object.id = self.curSprite
 			self.sprites[object.id] = object
 			self.curSprite = self.curSprite + 1
 		end
 		
 		local setType = b2.STATIC_BODY
-		if self.conf.type == "dynamic" then
+		if conf.type == "dynamic" then
 			setType = b2.DYNAMIC_BODY
-		elseif self.conf.type == "kinematic" then
+		elseif conf.type == "kinematic" then
 			setType = b2.KINEMATIC_BODY
 		end
 		
@@ -1689,20 +1878,24 @@ function loadPhysicsExtension()
 		local chain = b2.ChainShape.new()
 		chain:createChain(unpack(vertices))
 		
-		local fixture = body:createFixture{shape = chain, density = self.conf.density, 
-		friction = self.conf.friction, restitution = self.conf.resitution}
+		local fixture = body:createFixture{shape = chain, density = conf.density, 
+		friction = conf.friction, restitution = conf.resitution}
 		
 		if object then
 			body:setPosition(object:getX(), object:getY())
 			body:setAngle(math.rad(object:getRotation()))
 			object.body = body
-			if self.conf.type == "dynamic" and self.conf.draggable then
+			body.object = object
+			if conf.type == "dynamic" and conf.draggable then
 				self:makeDraggable(object)
 			end
+			self:__enchanceObject(object)
 		end
 		
 		body.userdata = {}
 		body.joints = {}
+		
+		return self
 		
 	end
 	
@@ -1727,6 +1920,7 @@ function loadPhysicsExtension()
 				sprite:setRotation(math.deg(body:getAngle()))
 			end
 		end
+		return self
 	end
 	
 	function b2.World:getDebug()
@@ -1748,10 +1942,12 @@ function loadPhysicsExtension()
 			object.body = nil
 			object:removeFromParent()
 		end
+		return self
 	end
 	
 	function b2.Body:setData(key, value)
 		self.userdata[key] = value
+		return self
 	end
 	
 	function b2.Body:getData(key)

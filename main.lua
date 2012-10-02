@@ -72,6 +72,17 @@ local ball = Bitmap.new("ball.png", true)
 --create circle based on image
 world:createCircle(ball, {type = "dynamic", draggable = true})
 
+--we can move physical object by moving our sprite
+ball:setPosition(400, 100)
+
+--local collisions
+world:addBeginContact(ball, crate, function()
+	print("contact started")
+end)
+	:addEndContact(ball, crate, function()
+	print("contact ended")
+end)
+
 --create terrain so objects won't fall of the screen
 world:createTerrain(nil, {0,0, 
 	application:getContentWidth(),0, 

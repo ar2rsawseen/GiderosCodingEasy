@@ -10,7 +10,7 @@ local font = TTFont.new("tahoma.ttf", 70)
 local text = TextField.new(font, "Some text")
 	--positioning
 	--:setPosition("center", "center")
-	:setPosition(100,100)
+	:setPosition("center","center")
 	--named colors
 	:setTextColor("white")
 	:setAnchorPoint(0.5)
@@ -105,4 +105,6 @@ stage:addChild(text)
 
 --controlling z-index
 text:bringToFront()
+
+GTween.new(text, 2, {rotation=360})
 

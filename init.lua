@@ -179,12 +179,7 @@ end
 Sprite._setRotation = Sprite.setRotation
 
 function Sprite:setRotation(angle)
-
-	self:_setRotation(angle)
-	
-	self:setAnchorPoint(self:getAnchorPoint())
-	
-	return self
+	return self:set("rotation", angle)
 end
 
 Sprite._get = Sprite.get
@@ -195,7 +190,7 @@ function Sprite:get(param)
 		local x = self:_get("x")
 		--baseline fix
 		if self._baseX then
-			x = x - self._baseX
+			x = x + self._baseX
 		end
 		return x - self._offX
 	elseif param == "y" then
@@ -383,8 +378,12 @@ function Sprite:set(param, value)
 				local x,y = self.body:getPosition()
 				self.body:setPosition(x, value)
 			end
-		elseif param == "rotation" and self.body then
-			self.body:setAngle(math.rad(value))
+		elseif param == "rotation" then
+			self:_setRotation(value)
+			self:setAnchorPoint(self:getAnchorPoint())
+			if self.body then
+				self.body:setAngle(math.rad(value))
+			end
 		end
 		Sprite._set(self, param, value)
 	end
@@ -1777,7 +1776,7 @@ function loadPhysicsExtension()
 		--create box2d physical object
 		local body = self:createBody{type = setType}
 		
-		local chain = b2.ChainShape.new()
+		local poly = b2.PolygonShape.new()
 		local vertices = {}
 		local startW = -width/2
 		local startH = -height/2
@@ -1818,7 +1817,7 @@ function loadPhysicsExtension()
 		for i = 1, #points do
 			vertices[#vertices+1] = points[i]
 		end
-		chain:createChain(unpack(vertices))
+		poly:set(unpack(vertices))
 		
 		local fixture = body:createFixture{shape = chain, density = conf.density, 
 		friction = conf.friction, restitution = conf.resitution}
@@ -1959,10 +1958,11 @@ end
 
 local _require = require
 require = function(name)
-	_require(name)
+	local answer = _require(name)
 	if name == "box2d" then
 		-- load box2d extensions
 		loadPhysicsExtension()
 		require = _require
 	end
+	return answer
 end

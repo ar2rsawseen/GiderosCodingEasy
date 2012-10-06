@@ -1612,11 +1612,12 @@ function loadPhysicsExtension()
 			type = "static",
 			density = 1.0,
 			friction = 1.0,
-			resitution = 0.2,
+			restitution = 0.2,
 			update = true,
 			draggable = false,
 			width = nil,
-			height = nil
+			height = nil,
+			isSensor = false
 		}
 		
 		if config then
@@ -1655,7 +1656,7 @@ function loadPhysicsExtension()
 		poly:setAsBox(width/2, height/2)
 		
 		local fixture = body:createFixture{shape = poly, density = conf.density, 
-		friction = conf.friction, restitution = conf.resitution}
+		friction = conf.friction, restitution = conf.restitution, isSensor = conf.isSensor}
 		
 		if object then
 			object:setAnchorPoint(0.5, 0.5)
@@ -1682,10 +1683,11 @@ function loadPhysicsExtension()
 			type = "static",
 			density = 1.0,
 			friction = 1.0,
-			resitution = 0.2,
+			restitution = 0.2,
 			update = true,
 			draggable = false,
-			radius = nil
+			radius = nil,
+			isSensor = false
 		}
 		
 		if config then
@@ -1721,7 +1723,7 @@ function loadPhysicsExtension()
 		local circle = b2.CircleShape.new(0, 0, radius)
 		
 		local fixture = body:createFixture{shape = circle, density = conf.density, 
-		friction = conf.friction, restitution = conf.resitution}
+		friction = conf.friction, restitution = conf.restitution, isSensor = conf.isSensor}
 		
 		if object then
 			object:setAnchorPoint(0.5, 0.5)
@@ -1748,9 +1750,10 @@ function loadPhysicsExtension()
 			type = "static",
 			density = 1.0,
 			friction = 1.0,
-			resitution = 0.2,
+			restitution = 0.2,
 			update = true,
-			draggable = false
+			draggable = false,
+			isSensor = false
 		}
 		
 		if config then
@@ -1820,7 +1823,7 @@ function loadPhysicsExtension()
 		poly:set(unpack(vertices))
 		
 		local fixture = body:createFixture{shape = chain, density = conf.density, 
-		friction = conf.friction, restitution = conf.resitution}
+		friction = conf.friction, restitution = conf.restitution, isSensor = conf.isSensor}
 		
 		if object then
 			body:setPosition(object:getX(), object:getY())
@@ -1846,9 +1849,10 @@ function loadPhysicsExtension()
 			type = "static",
 			density = 1.0,
 			friction = 1.0,
-			resitution = 0.2,
+			restitution = 0.2,
 			update = true,
-			draggable = false
+			draggable = false,
+			isSensor = false
 		}
 		
 		if config then
@@ -1878,7 +1882,7 @@ function loadPhysicsExtension()
 		chain:createChain(unpack(vertices))
 		
 		local fixture = body:createFixture{shape = chain, density = conf.density, 
-		friction = conf.friction, restitution = conf.resitution}
+		friction = conf.friction, restitution = conf.restitution, isSensor = conf.isSensor}
 		
 		if object then
 			body:setPosition(object:getX(), object:getY())

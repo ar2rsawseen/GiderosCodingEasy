@@ -728,7 +728,7 @@ end
 Shape._clear = Shape.clear
 
 function Shape:clear()
-	Shape._clear()
+	self:_clear()
 	self._allPoints = {}
 	return self
 end

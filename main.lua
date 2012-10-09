@@ -10,10 +10,10 @@ local font = TTFont.new("tahoma.ttf", 70)
 local text = TextField.new(font, "Some text")
 	--positioning
 	--:setPosition("center", "center")
-	:setPosition("center","center")
+	:setPosition(250,250)
 	--named colors
 	:setTextColor("white")
-	:setAnchorPoint(0.5)
+	:setAnchorPoint(0.5, 0.5)
 	:setRotation(45)
 	:setShadow(3, 3, "gray")
 	

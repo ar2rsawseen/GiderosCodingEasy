@@ -262,7 +262,7 @@ end
 function Sprite:sendToBack()
 	local parent = self:getParent()
 	if parent then
-		parent:addChildAt(self, 0)
+		parent:addChildAt(self, 1)
 	end
 	return self
 end
@@ -283,6 +283,14 @@ function Sprite:getIndex()
 	if parent then
 		return parent:getChildIndex(self)
 	end
+end
+
+function Sprite:addChildAtBack(child)
+	local parent = self:getParent()
+	if parent then
+		parent:addChildAt(child, 1)
+	end
+	return self
 end
 
 function Sprite:addChildBefore(child, reference)
@@ -1420,6 +1428,57 @@ overRideMethod(Shape, "setLineStyle", 3, colorCallback)
 
 function loadPhysicsExtension()
 
+	--implementing vectors
+	b2.Vect = Core.class()
+	
+	--create new vector from 2 points (A starting point and B ending point)
+	function b2.Vect:init(startX, startY, endX, endY)
+		self.startX = startX
+		self.startY = startY
+		self.endX = endX
+		self.endY = endY
+		self.xVect = startX - endX
+		self.yVect = startY - endY
+	end
+	
+	--get vector on x axis
+	function b2.Vect:getX()
+		return self.xVect
+	end
+	
+	--get vector on y axis
+	function b2.Vect:getY()
+		return self.yVect
+	end
+	
+	--get the length of the vector (distance between A and B points)
+	function b2.Vect:getLength()
+		if not self.length then
+			self.length = math.sqrt(self.xVect*self.xVect + self.yVect*self.yVect)
+		end
+		return self.length
+	end
+	
+	--get the angle of vector (angle for AB line, when up is 0 radians)
+	function b2.Vect:getAngle()
+		if not self.angle then
+			self.angle = math.acos(self.yVect/(self:getLength()))
+	
+			if(self.xVect > 0) then
+				self.angle = -self.angle
+			end
+		end
+		return self.angle
+	end
+	
+	--get point on AB vector with provided distance from point A
+	function b2.Vect:getPoint(fromDistance)
+		local ratio = math.sqrt((fromDistance*fromDistance)/(self.xVect*self.xVect + self.yVect*self.yVect))
+		local endX = self.startX + self.xVect*ratio
+		local endY = self.startY + self.yVect*ratio
+		return endX, endY
+	end
+	
 	b2.World._new = b2.World.new
 	
 	function b2.World.new(...)

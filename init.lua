@@ -387,13 +387,14 @@ function Sprite:set(param, value)
 				self.body:setPosition(x, value)
 			end
 		elseif param == "rotation" then
-			self:_setRotation(value)
-			self:setAnchorPoint(self:getAnchorPoint())
 			if self.body then
 				self.body:setAngle(math.rad(value))
 			end
 		end
 		Sprite._set(self, param, value)
+		if param == "rotation" or param == "scaleX" or param == "scaleY" or param == "scale" then
+			self:setAnchorPoint(self:getAnchorPoint())
+		end
 	end
 	return self
 end

@@ -106,5 +106,5 @@ stage:addChild(text)
 --controlling z-index
 text:bringToFront()
 
-GTween.new(text, 2, {rotation=360})
+GTween.new(text, 2, {scaleX=10})
 

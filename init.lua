@@ -502,6 +502,21 @@ function Sprite:show()
 	return self
 end
 
+function Sprite:isVisibleDeeply()
+	-- Answer true only if the sprite and all it's a parents are visible. Normally, isVisible() will
+	-- return true even if a sprite is actually not visible on screen by wont of one of it's parents
+	-- being made invisible.
+	--
+	local try=self
+	while (try) do
+		if  not(try:isVisible() and try:getAlpha()>0) then
+			return false
+		end
+		try = try:getParent()
+	end
+	return true
+end
+
 --[[
 	TEXTUREREGION EXTENSIONS
 ]]--
@@ -547,6 +562,10 @@ function Bitmap.new(...)
 	local bitmap = Bitmap._new(arg[1])
 	bitmap.texture = arg[1]
 	return bitmap
+end
+
+function Bitmap:getTexture()
+	return self.texture
 end
 
 Bitmap._setAnchorPoint = Bitmap.setAnchorPoint
@@ -1217,42 +1236,6 @@ end
 --[[ chaining ]]--
 
 changeAllSetFunctions(TextInputDialog)
-
---[[
-	MOUSE/TOUCH EVENTS CROSSCOMPATABILITY
-]]--
-
-local os = application:getDeviceInfo()
- 
-if os == "Windows" or os == "Mac OS" then
-	EventDispatcher.__addEventListener = EventDispatcher.addEventListener
- 
-	local function wrapper(t, e)
-		e.touch = {}
-		e.touch.id = 1
-		e.touch.x = e.x
-		e.touch.y = e.y
-		
-		if t.data then
-			t.listener(t.data, e)
-		else
-			t.listener(e)
-		end
-	end
- 
-	function EventDispatcher:addEventListener(type, listener, data)
-		if type == Event.TOUCHES_BEGIN then
-			self:__addEventListener(Event.MOUSE_DOWN, wrapper, {listener = listener, data = data})
-		elseif type == Event.TOUCHES_MOVE then
-			self:__addEventListener(Event.MOUSE_MOVE, wrapper, {listener = listener, data = data})
-		elseif type == Event.TOUCHES_END then
-			self:__addEventListener(Event.MOUSE_UP, wrapper, {listener = listener, data = data})
-		else
-			self:__addEventListener(type, listener, data)
-		end
-		return self
-	end
-end
 
 --[[
 	NAMED COLORS
@@ -1994,7 +1977,7 @@ function loadPhysicsExtension()
 		return debugDraw
 	end
 	
-	function b2.World:removeBody(object)
+	function b2.World:removeBody(object, destroy)
 		if object.body then
 			if object.id then
 				self.sprites[object.id] = nil
@@ -2003,7 +1986,9 @@ function loadPhysicsExtension()
 				self:destroyBody(object.body)
 			end)
 			object.body = nil
-			object:removeFromParent()
+			if destroy then
+				object:removeFromParent()
+			end
 		end
 		return self
 	end

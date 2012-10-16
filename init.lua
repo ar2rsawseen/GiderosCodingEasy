@@ -1003,6 +1003,12 @@ function Application:getVolume()
 	end
 end
 
+Application.__exit = Application.exit
+ 
+function Application:exit()
+	if self:getDeviceInfo() == "Android" then self:__exit() end
+end
+
 --[[ global antialising implementation ]]--
 
 function Application:enableFiltering()

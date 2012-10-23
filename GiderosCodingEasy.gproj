@@ -1,0 +1,12 @@
+<project>
+ <properties autorotation="0" fps="60" scaleMode="3" mouseToTouch="1" iosDevice="0" packageName="com.yourdomain.yourapp" logicalHeight="800" logicalWidth="480" mouseTouchOrder="0" retinaDisplay="0" touchToMouse="1" assetsOnly="0" orientation="1" architecture="0">
+  <imageScales/>
+ </properties>
+ <file source="init.lua"/>
+ <file source="gtween.lua"/>
+ <file source="tahoma.ttf"/>
+ <file source="ball.png"/>
+ <file source="crate.png"/>
+ <file source="main.lua"/>
+ <file source="GiderosCodingEasy.lua" excludeFromExecution="1"/>
+</project>

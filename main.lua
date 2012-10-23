@@ -84,10 +84,10 @@ end)
 end)
 
 --create terrain so objects won't fall of the screen
-world:createTerrain(nil, {0,0, 
-	application:getContentWidth(),0, 
-	application:getContentWidth(), application:getContentHeight(), 
-	0, application:getContentHeight(), 
+	:createTerrain(nil, {0,0, 
+		application:getContentWidth(),0, 
+		application:getContentWidth(), application:getContentHeight(), 
+		0, application:getContentHeight(), 
 	0,0})
 
 stage:addChild(text)

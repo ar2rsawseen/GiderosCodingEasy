@@ -10,12 +10,13 @@ local font = TTFont.new("tahoma.ttf", 70)
 local text = TextField.new(font, "Some text")
 	--positioning
 	--:setPosition("center", "center")
-	:setPosition(250,250)
+	:setPosition(300,250)
 	--named colors
 	:setTextColor("white")
 	:setAnchorPoint(0.5, 0.5)
 	:setRotation(45)
-	:setShadow(3, 3, "gray")
+	:setShadow(3, 3, "gray", 0.5)
+	--:setSkew(60)
 	
 local test = Shape.new()
 	:setFillStyle(Shape.SOLID, "white", 0.5)
@@ -106,5 +107,5 @@ stage:addChild(text)
 --controlling z-index
 text:bringToFront()
 
-GTween.new(text, 2, {scaleX=10})
+GTween.new(text, 2, {rotation = 720})
 

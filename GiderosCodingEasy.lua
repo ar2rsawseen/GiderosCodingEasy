@@ -20,6 +20,15 @@ local function overRideMethod(object, func, index, callback)
 	end
 end
 
+local function defExt(path, ext)
+	local found, len, remainder = string.find(path, "^(.*)%.[^%.]*$")
+	if found then
+		return path
+	else
+		return path .. "." .. ext
+	end
+end
+
 local function getAbsolutes()
 	local ltx = application:getLogicalTranslateX()
 	local lty = application:getLogicalTranslateY()
@@ -112,8 +121,6 @@ changeAllSetFunctions(Sprite)
 changeAllSetFunctions(TextureRegion)
 
 changeAllSetFunctions(Bitmap)
-
-changeAllSetFunctions(TextField)
 
 changeAllSetFunctions(Shape)
 
@@ -267,22 +274,14 @@ function Sprite:setAnchorPoint(x, y)
 	local dx = -self._offX - (-self._offX * cosine + self._offY * sine)
 	local dy = -self._offY - (-self._offY * cosine - self._offX * sine)
 	
-	self._offX = self._offX + dx
-	self._offY = self._offY + dy
+	self._offX = math.round(self._offX + dx)
+	self._offY = math.round(self._offY + dy)
 	
 	local newX = curX + self._offX
 	local newY = curY + self._offY
 	
-	--baseline fix
-	if self._baseX then
-		newX = newX - self._baseX
-	end
-	if self._baseY then
-		newY = newY - self._baseY
-	end
-	
-	self:_set("x", newX)
-	self:_set("y", newY)
+	self:_set("x", math.round(newX))
+	self:_set("y", math.round(newY))
 	
 	return self
 end
@@ -297,22 +296,18 @@ Sprite._get = Sprite.get
 
 function Sprite:get(param)
 	self:_testAnchor()
-	if param == "x" then
-		local x = self:_get("x")
-		--baseline fix
-		if self._baseX then
-			x = x + self._baseX
-		end
-		return x - self._offX
-	elseif param == "y" then
-		local y = self:_get("y")
-		--baseline fix
-		if self._baseY then
-			y = y + self._baseY
-		end
-		return y - self._offY
+	if Sprite.transform[param] ~= nil then
+		return Sprite.transform[param]
 	else
-		return self:_get(param)
+		if param == "x" then
+			local x = self:_get("x")
+			return x - self._offX
+		elseif param == "y" then
+			local y = self:_get("y")
+			return y - self._offY
+		else
+			return self:_get(param)
+		end
 	end
 end
 
@@ -397,10 +392,7 @@ function Sprite:getIndex()
 end
 
 function Sprite:addChildAtBack(child)
-	local parent = self:getParent()
-	if parent then
-		parent:addChildAt(child, 1)
-	end
+	self:addChildAt(child, 1)
 	return self
 end
 
@@ -439,7 +431,8 @@ Sprite._set = Sprite.set
 function Sprite:set(param, value)
 	self:_testAnchor()
 	self:_loadAbsolute()
-	if Sprite.transform[param] then
+	if Sprite.transform[param] ~= nil then
+		Sprite.transform[param] = value
 		local matrix = self:getMatrix()
 		matrix[param](matrix, value)
 		self:setMatrix(matrix)
@@ -461,13 +454,10 @@ function Sprite:set(param, value)
 					error("Invalid position name")
 				end
 			end
-			--baseline fix
-			if self._baseX then
-				value = value - self._baseX
-			end
 			if self._offX then
 				value = value + self._offX
 			end
+			value = math.round(value)
 			if self.body then
 				local x,y = self.body:getPosition()
 				self.body:setPosition(value, y)
@@ -489,13 +479,10 @@ function Sprite:set(param, value)
 					error("Invalid position name")
 				end
 			end
-			--baseline fix
-			if self._baseY then
-				value = value - self._baseY
-			end
 			if self._offY then
 				value = value + self._offY
 			end
+			value = math.round(value)
 			if self.body then
 				local x,y = self.body:getPosition()
 				self.body:setPosition(x, value)
@@ -506,7 +493,7 @@ function Sprite:set(param, value)
 			end
 		end
 		Sprite._set(self, param, value)
-		if param == "rotation" or param == "scaleX" or param == "scaleY" or param == "scale" then
+		if param == "rotation" or param == "scaleX" or param == "scaleY" or param == "scale" or param == "skewX" or param == "skewY" or param == "skew" then
 			self:setAnchorPoint(self:getAnchorPoint())
 		end
 	end
@@ -570,9 +557,9 @@ end
 --[[ skew transformation ]]--
 
 Sprite.transform = {
-	"skew",
-	"skewX",
-	"skewY"
+	skew = 0,
+	skewX = 0,
+	skewY = 0
 }
 
 function Sprite:setSkew(xAng, yAng)
@@ -586,6 +573,18 @@ end
 
 function Sprite:setSkewY(yAng)
 	return self:set("skewY", yAng)
+end
+
+function Sprite:getSkew()
+	return self:get("skewX"), self:get("skewY")
+end
+
+function Sprite:getSkewX()
+	return self:get("skewX")
+end
+
+function Sprite:getSkewY()
+	return self:get("skewY")
 end
 
 --[[ flipping ]]--
@@ -648,8 +647,11 @@ TexturePack._new = TexturePack.new
 function TexturePack.new(...)
 	
 	local pack
+	local arg = {...}
 	if type(arg[1]) == "string" then
-		pack = TexturePack._new(arg[1]..".txt", arg[1]..".png")
+		local txt=defExt(arg[1], "txt")
+		local png=defExt(arg[2] or arg[1], "png")
+		pack = TexturePack._new(txt, png)
 	else
 		pack = TexturePack._new(...)
 	end
@@ -666,9 +668,9 @@ end
 Bitmap._new = Bitmap.new
 
 function Bitmap.new(...)
-	
+	local arg = {...}
 	if type(arg[1]) == "string" then
-		arg[1] = Texture.new(unpack(arg))
+		arg[1] = Texture.new(...)
 	end
 	
 	local bitmap = Bitmap._new(arg[1])
@@ -692,53 +694,78 @@ end
 	TEXTFIELD EXTENSIONS
 ]]--
 
---[[ baseline fix ]]--
+--[[ Completely overriding TextField ]]--
 
-TextField._BLnew = TextField.new
+_TextField = TextField
 
-function TextField.new(...)
-	local text = TextField._BLnew(unpack(arg))
-	text._font = arg[1]
-	text._offsetX = 0
-	text._offsetY = 0
+TextField = Core.class(Sprite)
+
+function TextField:init(...)
+	local arg = {...}
+	self._text = _TextField.new(...)
+	self:addChild(self._text)
+	self._font = arg[1]
+	self._offsetX = 0
+	self._offsetY = 0
 	
-	text._baseX, text._baseY = text:getBounds(stage)
-	
-	return text
+	local baseX, baseY = self._text:getBounds(stage)
+	self._text:setPosition(-baseX, -baseY)
 end
 
---[[ shadow implementation ]]--
-
-function TextField:setShadow(offX, offY, color)
-	if not self._real then
-		self._real = TextField.new(self._font, self:getText())
-		self._real:setTextColor(self:getTextColor())
-		self._real:setLetterSpacing(self:getLetterSpacing())
-		self:addChild(self._real)
-	end
-	
-	self._real:setPosition(-offX + self._baseX, -offY + self._baseY)
-	self:setPosition(self:getX() + self._offsetX + offX, self:getY() + self._offsetY + offY)
-	
-	self._offsetX = -offX
-	self._offsetY = -offY
-	
-	if color then
-		self:setTextColor(color)
-		if alpha then
-			self:setAlpha(alpha)
-		end
+function TextField:setText(...)
+	self._text:setText(...)
+	if self._shadow then
+		self._shadow:setText(...)
 	end
 	return self
 end
 
-TextField._setText = TextField.setText
+function TextField:getText()
+	return self._text:getText()
+end
 
-function TextField:setText(text)
-	if self._real then
-		self._real:_setText(text)
+function TextField:setTextColor(...)
+	self._text:setTextColor(...)
+	if self._shadow then
+		self._shadow:setTextColor(...)
 	end
-	self:_setText(text)
+	return self
+end
+
+function TextField:getTextColor()
+	return self._text:getTextColor()
+end
+
+function TextField:setLetterSpacing(...)
+	self._text:setLetterSpacing(...)
+	if self._shadow then
+		self._shadow:setLetterSpacing(...)
+	end
+	return self
+end
+
+function TextField:getLetterSpacing()
+	return self._text:getLetterSpacing()
+end
+
+--[[ shadow implementation ]]--
+
+function TextField:setShadow(offX, offY, color, alpha)
+	if not self._shadow then
+		self._shadow = _TextField.new(self._font, self._text:getText())
+		self._shadow:setTextColor(self._text:getTextColor())
+		self._shadow:setLetterSpacing(self._text:getLetterSpacing())
+		self:addChildAtBack(self._shadow)
+	end
+	
+	self._shadow:setPosition(offX + self._text:getX(), offY + self._text:getY())
+	
+	if color then
+		self._shadow:setTextColor(color)
+		if alpha then
+			self._shadow:setAlpha(alpha)
+		end
+	end
 	return self
 end
 
@@ -749,9 +776,18 @@ end
 --[[ draw a polygon from a list of vertices ]]--
 
 function Shape:drawPoly(points)
+	local drawOp=self.moveTo
 	self:beginPath()
-	for i,p in ipairs(points) do
-              self:lineTo(p[1], p[2])
+	if type(points[1]) == "table" then
+		for i,p in ipairs(points) do
+			drawOp(self, p[1], p[2])
+			drawOp=self.lineTo
+		end
+	else
+		for i = 1, #points, 2 do
+			drawOp(self, points[i], points[i+1])
+			drawOp=self.lineTo
+		end
 	end
 	self:closePath()
 	self:endPath()
@@ -822,8 +858,8 @@ Shape._moveTo = Shape.moveTo
 function Shape:moveTo(x,y)
 	self:_moveTo(x, y)
 	self._lastPoint = { x, y }
-	self._allPoints[#self._allPoints] = x
-	self._allPoints[#self._allPoints] = y
+	self._allPoints[#self._allPoints+1] = x
+	self._allPoints[#self._allPoints+1] = y
 	return self
 end
 
@@ -832,8 +868,8 @@ Shape._lineTo = Shape.lineTo
 function Shape:lineTo(x,y)
 	self:_lineTo(x, y)
 	self._lastPoint = { x, y }
-	self._allPoints[#self._allPoints] = x
-	self._allPoints[#self._allPoints] = y
+	self._allPoints[#self._allPoints+1] = x
+	self._allPoints[#self._allPoints+1] = y
 	return self
 end
 
@@ -853,7 +889,7 @@ function Shape:quadraticCurveTo(cpx, cpy, x, y, mu)
 	if self._lastPoint then
 		local points = quadraticCurve(self._lastPoint[1], self._lastPoint[2], cpx, cpy, x, y, mu)
 		for i = 1, #points, 2 do
-			self:_lineTo(points[i],points[i+1])
+			self:lineTo(points[i],points[i+1])
 		end
 	end
 	self._lastPoint = { x, y }
@@ -870,7 +906,7 @@ function Shape:bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y, mu)
 				{ x=cp2x, y=cp2y },
 				{ x=x, y=y },
 			i)
-			self:_lineTo(p.x,p.y)
+			self:lineTo(p.x,p.y)
 		end
 	end
 	self._lastPoint = { x, y }
@@ -1047,6 +1083,7 @@ end
 Font._new = Font.new
 
 function Font.new(...)
+	local arg = {...}
 	if arg[3] == nil then
 		arg[3] = application:isFilteringEnabled()
 	end
@@ -1057,6 +1094,7 @@ end
 TTFont._new = TTFont.new
 
 function TTFont.new(...)
+	local arg = {...}
 	if arg[3] == nil then
 		arg[3] = application:isFilteringEnabled()
 	end
@@ -1067,6 +1105,7 @@ end
 Texture._new = Texture.new
 
 function Texture.new(...)
+	local arg = {...}
 	if arg[2] == nil then
 		arg[2] = application:isFilteringEnabled()
 	end
@@ -1080,8 +1119,8 @@ end
 
 Sound._play = Sound.play
 
-function Sound:play()
-	local channel = self:_play()
+function Sound:play(...)
+	local channel = self:_play(...)
 	if channel ~= nil then
 		channel.isPlaying = true
 		channel:addEventListener(Event.COMPLETE, function(channel)
@@ -1104,8 +1143,7 @@ end
 --[[ loop sounds ]]--
 
 function Sound:loop()
-	self:play(0, math.huge)
-	return self
+	return self:play(0, math.huge)
 end
 
 --[[
@@ -1367,7 +1405,7 @@ local function colorCallback(color)
 	return color
 end
 
-overRideMethod(TextField, "setTextColor", 2, colorCallback)
+overRideMethod(_TextField, "setTextColor", 2, colorCallback)
 overRideMethod(Application, "setBackgroundColor", 2, colorCallback)
 overRideMethod(Shape, "setFillStyle", 3, colorCallback)
 overRideMethod(Shape, "setLineStyle", 3, colorCallback)

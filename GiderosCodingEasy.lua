@@ -436,6 +436,9 @@ function Sprite:set(param, value)
 		local matrix = self:getMatrix()
 		matrix[param](matrix, value)
 		self:setMatrix(matrix)
+		if param == "skewX" or param == "skewY" or param == "skew" then
+			self:setAnchorPoint(self:getAnchorPoint())
+		end
 	else
 		if param == "x" then
 			if type(value) == "string" then
@@ -493,7 +496,7 @@ function Sprite:set(param, value)
 			end
 		end
 		Sprite._set(self, param, value)
-		if param == "rotation" or param == "scaleX" or param == "scaleY" or param == "scale" or param == "skewX" or param == "skewY" or param == "skew" then
+		if param == "rotation" or param == "scaleX" or param == "scaleY" or param == "scale" then
 			self:setAnchorPoint(self:getAnchorPoint())
 		end
 	end
@@ -1122,11 +1125,6 @@ Sound._play = Sound.play
 function Sound:play(...)
 	local channel = self:_play(...)
 	if channel ~= nil then
-		channel.isPlaying = true
-		channel:addEventListener(Event.COMPLETE, function(channel)
-			self.isPlaying = false
-			application.sounds[self.id] = nil
-		end, channel)
 		if application.sounds == nil then
 			application.sounds = {}
 			application.currentSound = 1
@@ -1140,10 +1138,16 @@ function Sound:play(...)
 	return channel
 end
 
---[[ loop sounds ]]--
-
-function Sound:loop()
-	return self:play(0, math.huge)
+function Sound:playWithLoopCount(startTime, nbLoops)
+	nbLoops = nbLoops or 1
+	local soundLength = self:getLength()
+ 
+	local channel = self:play(startTime, true) -- loop infinitely
+ 
+	-- set looping as false after (loops - 0.5) count
+	Timer.delayedCall((nbLoops - 0.5) * soundLength, function() channel:setLooping(false) end)
+ 
+	return channel
 end
 
 --[[
@@ -1156,12 +1160,6 @@ function SoundChannel:stop(...)
 	self.isPlaying = false
 	application.sounds[self.id] = nil
 	return self
-end
-
---[[ check if sound is still playing ]]--
-
-function SoundChannel:isPlaying()
-	return self.isPlaying
 end
 
 --[[

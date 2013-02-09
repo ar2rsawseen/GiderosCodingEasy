@@ -9,32 +9,37 @@ application:setBackgroundColor("yellow")
 local font = TTFont.new("tahoma.ttf", 70)
 local text = TextField.new(font, "Some text")
 	--positioning
-	--:setPosition("center", "center")
+	:setPosition("center", "center")
 	:setPosition(300,250)
 	--named colors
 	:setTextColor("white")
 	:setAnchorPoint(0.5, 0.5)
 	:setRotation(45)
 	:setShadow(3, 3, "gray", 0.5)
-	--:setSkew(60)
+	:setSkew(60)
+	
+	
+local sound = Sound.new("main.mp3")
+	sound:play()
 	
 local test = Shape.new()
-	:setFillStyle(Shape.SOLID, "white", 0.5)
+	:setFillStyle(Shape.SOLID, "white")
 	:drawRoundRectangle(90, 90, 10)
 	:setPosition(100, 100)
 	:setAnchorPoint(0.5)
 	:setRotation(45)
+	:setSkewX(45)
 
---[[local bitmap = Bitmap.new("crate.png")
+local bitmap = Bitmap.new("crate.png")
 	:setPosition("center","top")
-	:setAnchorPoint(0.5)]]
+	:setAnchorPoint(0.5)
 	
 local bitmap = Shape.new()
 	:setFillStyle(Shape.SOLID, "red")
 	:drawRectangle(100,100)
 	:setAnchorPoint(0.5)
 	:setAbsolutePosition("right", "bottom")
-	--:setPosition("center","bottom")
+	:setPosition("center","bottom")
 
 local shape = Shape.new()
 	--named colors
@@ -62,9 +67,6 @@ local crate = Bitmap.new("crate.png", true)
 world:createRectangle(crate, {type = "dynamic"})
 
 --world:createRoundRectangle(test, 90, 90, 10, {type = "dynamic", draggable = true})
---[[world:createTerrain(test, {
-	0,0,90,0,90,90,0,90,0,0
-}, {type = "dynamic", draggable = true})]]
 
 --place image on screen
 local ball = Bitmap.new("ball.png", true)
@@ -78,13 +80,12 @@ ball:setPosition(400, 100)
 
 --local collisions
 world:addBeginContact(ball, crate, function()
-	print("contact started")
-end)
+		print("contact started")
+	end)
 	:addEndContact(ball, crate, function()
-	print("contact ended")
-end)
-
---create terrain so objects won't fall of the screen
+		print("contact ended")
+	end)
+	--create terrain so objects won't fall of the screen
 	:createTerrain(nil, {0,0, 
 		application:getContentWidth(),0, 
 		application:getContentWidth(), application:getContentHeight(), 
@@ -107,5 +108,5 @@ stage:addChild(text)
 --controlling z-index
 text:bringToFront()
 
-GTween.new(text, 2, {rotation = 720})
+GTween.new(test, 2, {rotation = 720})
 

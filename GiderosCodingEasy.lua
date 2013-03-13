@@ -89,6 +89,30 @@ function math.round(num, factor)
 end
 
 
+function io.exists(file)
+    local f = io.open(file, "rb")
+    if f == nil then
+        return false
+    end
+    f:close()
+    return true
+end
+
+function io.copy(src, dst)
+    local srcf = io.open(src, "rb")
+    local dstf = io.open(dst, "wb")
+
+    local size = 2^13      -- good buffer size (8K)
+    while true do
+        local block = srcf:read(size)
+        if not block then break end
+        dstf:write(block)
+    end
+
+    srcf:close()
+    dstf:close()
+end
+
 --[[ CHAINING STARTS ]]--
 
 --for chaining all setters
@@ -121,6 +145,8 @@ changeAllSetFunctions(Sprite)
 changeAllSetFunctions(TextureRegion)
 
 changeAllSetFunctions(Bitmap)
+
+changeAllSetFunctions(TextField)
 
 changeAllSetFunctions(Shape)
 
@@ -541,6 +567,13 @@ function Sprite:ignoreTouches(event)
 	return self
 end
 
+function Sprite:enableTouches()
+	-- Tell a sprite to ignore (and block) all mouse and touch events
+	self:removeEventListener(Event.MOUSE_DOWN, self.ignoreMouseHandler, self)
+	self:removeEventListener(Event.TOUCHES_BEGIN, self.ignoreTouchHandler, self)
+	return self
+end
+
 function Sprite:setWidth(newWidth)
 	-- Set a sprite's width using the scale property
 	local x,y,width,height=self:getBounds(self)
@@ -847,9 +880,9 @@ local function quadraticCurve(startx, starty, cpx, cpy, x, y, mu)
 	return t
 end
 
-Shape._new = Shape.new
+Shape._new = Shape.__new
 
-function Shape.new()
+function Shape.__new()
 	local shape = Shape._new()
 	shape._lastPoint = nil
 	shape._allPoints = {}
@@ -1083,9 +1116,9 @@ function Application:isFilteringEnabled()
 	return self._filtering
 end
 
-Font._new = Font.new
+Font._new = Font.__new
 
-function Font.new(...)
+function Font.__new(...)
 	local arg = {...}
 	if arg[3] == nil then
 		arg[3] = application:isFilteringEnabled()
@@ -1094,9 +1127,9 @@ function Font.new(...)
 	return font
 end
 
-TTFont._new = TTFont.new
+TTFont._new = TTFont.__new
 
-function TTFont.new(...)
+function TTFont.__new(...)
 	local arg = {...}
 	if arg[3] == nil then
 		arg[3] = application:isFilteringEnabled()
@@ -1105,9 +1138,9 @@ function TTFont.new(...)
 	return font
 end
 
-Texture._new = Texture.new
+Texture._new = Texture.__new
 
-function Texture.new(...)
+function Texture.__new(...)
 	local arg = {...}
 	if arg[2] == nil then
 		arg[2] = application:isFilteringEnabled()
@@ -1160,6 +1193,49 @@ function SoundChannel:stop(...)
 	self.isPlaying = false
 	application.sounds[self.id] = nil
 	return self
+end
+
+SoundChannel.___set=SoundChannel.set
+ 
+function SoundChannel:set(param, value)
+	if param=="volume" then
+		self:setVolume(value)
+	elseif param=="pitch" then
+		self:setPitch(value)
+	else
+		SoundChannel.___set(self, param, value)
+	end
+	return self
+end
+ 
+SoundChannel.___get=SoundChannel.get
+ 
+function SoundChannel:get(param, value)
+	if param=="volume" then
+		return self:getVolume()
+	end
+	if param=="pitch" then
+		return self:getPitch()
+	end
+	return SoundChannel.___get(self, param, value)
+end
+ 
+function SoundChannel:fadeIn(duration, optFinalLevel, completionFunc)
+	if GTween then
+		self:setVolume(0)
+		GTween.new(self, duration, { volume=optFinalLevel or 1 }, { onComplete=completionFunc })
+	end
+end
+ 
+function SoundChannel:fadeOut(duration, optFinalLevel, completionFunc)
+	if GTween then
+		GTween.new(self, duration, { volume=optFinalLevel or 0 }, { onComplete=
+			function() 
+				self:stop()
+				if completionFunc then completionFunc() end
+			end
+		})
+	end
 end
 
 --[[
@@ -1394,10 +1470,11 @@ Colors = {
 
 local function colorCallback(color)
 	if type(color) == "string" then
+		local colorName=color
 		color = color:upper()
 		color = Colors[color]
 		if color == nil then
-			error("Invalid color name")
+			error("Invalid color name", colorName)
 		end
 	end
 	return color

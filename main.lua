@@ -20,7 +20,7 @@ local text = TextField.new(font, "Some text")
 	
 	
 local sound = Sound.new("main.mp3")
-	sound:play()
+	sound:play(0, true)
 	
 local test = Shape.new()
 	:setFillStyle(Shape.SOLID, "white")

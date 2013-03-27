@@ -1295,8 +1295,8 @@ function Matrix:multiply(matrix)
 	local m12 = matrix:getM11()*self:getM12() + matrix:getM12()*self:getM22()
 	local m21 = matrix:getM21()*self:getM11() + matrix:getM22()*self:getM21()
 	local m22 = matrix:getM21()*self:getM12() + matrix:getM22()*self:getM22()
-	local tx = self:getTx() + matrix:getTx()
-	local ty = self:getTy() + matrix:getTy()
+	local tx  = matrix:getM11()*self:getTx()  + matrix:getM12()*self:getTy() + matrix:getTx()
+	local ty  = matrix:getM21()*self:getTx()  + matrix:getM22()*self:getTy() + matrix:getTy()
 	return self:setElements(m11, m12, m21, m22, tx, ty)
 end
 

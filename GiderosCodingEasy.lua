@@ -1246,12 +1246,11 @@ end
 
 function Matrix:rotate(deg)
 	local rad = math.rad(deg)
-	return self:multiply(Matrix.new(math.cos(rad), math.sin(rad), -math.sin(rad), math.cos(rad), 0, 0))
+	return self:multiply(Matrix.new(math.cos(rad), -math.sin(rad), math.sin(rad), math.cos(rad), 0, 0))
 end
 
 function Matrix:translate(x,y)
-	if not y then y = x end
-	return self:multiply(Matrix.new(1, 0, 0, 1, x, y))
+	return self:multiply(Matrix.new(1, 0, 0, 1, x, y or x))
 end
 
 function Matrix:translateX(x)
@@ -1262,9 +1261,8 @@ function Matrix:translateY(y)
 	return self:translate(0, y)
 end
 
-function Matrix:scale(x,y)
-	if not y then y = x end
-	return self:multiply(Matrix.new(x, 0, 0, y, 0, 0))
+function Matrix:scale(sx,sy)
+	return self:multiply(Matrix.new(sx, 0, 0, sy or sx, 0, 0))
 end
 
 function Matrix:scaleX(x)
@@ -1276,10 +1274,9 @@ function Matrix:scaleY(y)
 end
 
 function Matrix:skew(xAng,yAng)
-	if not yAng then yAng = xAng end
 	xAng = math.rad(xAng)
-	yAng = math.rad(yAng)
-	return self:multiply(Matrix.new(1, math.tan(yAng), math.tan(xAng), 1, 0, 0))
+	yAng = math.rad(yAng or xAng)
+	return self:multiply(Matrix.new(1, math.tan(xAng), math.tan(yAng), 1, 0, 0))
 end
 
 function Matrix:skewX(xAng)
@@ -1291,12 +1288,12 @@ function Matrix:skewY(yAng)
 end
 
 function Matrix:multiply(matrix)
-	local m11 = matrix:getM11()*self:getM11() + matrix:getM12()*self:getM21()
-	local m12 = matrix:getM11()*self:getM12() + matrix:getM12()*self:getM22()
-	local m21 = matrix:getM21()*self:getM11() + matrix:getM22()*self:getM21()
-	local m22 = matrix:getM21()*self:getM12() + matrix:getM22()*self:getM22()
-	local tx  = matrix:getM11()*self:getTx()  + matrix:getM12()*self:getTy() + matrix:getTx()
-	local ty  = matrix:getM21()*self:getTx()  + matrix:getM22()*self:getTy() + matrix:getTy()
+	local m11 = self:getM11()*matrix:getM11() + self:getM12()*matrix:getM21()
+	local m12 = self:getM11()*matrix:getM12() + self:getM12()*matrix:getM22()
+	local m21 = self:getM21()*matrix:getM11() + self:getM22()*matrix:getM21()
+	local m22 = self:getM21()*matrix:getM12() + self:getM22()*matrix:getM22()
+	local tx  = self:getM11()*matrix:getTx()  + self:getM12()*matrix:getTy() + self:getTx()
+	local ty  = self:getM21()*matrix:getTx()  + self:getM22()*matrix:getTy() + self:getTy()
 	return self:setElements(m11, m12, m21, m22, tx, ty)
 end
 

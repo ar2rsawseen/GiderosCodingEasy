@@ -496,14 +496,12 @@ function loadPhysicsExtension()
 	end
 	
 	function b2.Body:set(param, val)
-		local x, y = self:getPosition()
-        local lvx, lvy = self:getLinearVelocity()
 		if param == "x" then
-			x = val
-			self:setPosition(x, y)
+			local x, y = self:getPosition()
+			self:setPosition(val, y)
 		elseif param == "y" then
-			y = val
-			self:setPosition(x, y)
+			local x, y = self:getPosition()
+			self:setPosition(x, val)
 		elseif param == "rotation" then
 			self:setAngle(math.rad(val))		
 		else
@@ -526,11 +524,11 @@ function loadPhysicsExtension()
 	end
  
 	function b2.Body:get(param)
-		local x, y = self:getPosition()
-        local lvx, lvy = self:getLinearVelocity()
 		if param == "x" then
+			local x, y = self:getPosition()
 			return x
 		elseif param == "y" then
+			local x, y = self:getPosition()
 			return y
 		elseif param == "rotation" then
 			return math.deg(self:getAngle())		

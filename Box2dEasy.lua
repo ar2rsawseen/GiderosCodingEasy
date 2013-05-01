@@ -379,105 +379,6 @@ function loadPhysicsExtension()
 		return self
 	end
 	
-	--[[function b2.World:createRoundRectangle(object, width, height, radius, config)
-		
-		local conf = {
-			type = "static",
-			density = 1.0,
-			friction = 1.0,
-			restitution = 0.2,
-			update = true,
-			draggable = false,
-			isSensor = false
-		}
-		
-		if config then
-			--copying configuration
-			for key,value in pairs(config) do
-				conf[key]= value
-			end
-		end
-		
-		if object and conf.update then
-			object.id = self.curSprite
-			self.sprites[object.id] = object
-			self.curSprite = self.curSprite + 1
-		end
-		
-		local setType = b2.STATIC_BODY
-		if conf.type == "dynamic" then
-			setType = b2.DYNAMIC_BODY
-		elseif conf.type == "kinematic" then
-			setType = b2.KINEMATIC_BODY
-		end
-		
-		--create box2d physical object
-		local body = self:createBody{type = setType}
-		
-		local poly = b2.PolygonShape.new()
-		local vertices = {}
-		local startW = -width/2
-		local startH = -height/2
-		local endW = width/2
-		local endH = height/2
-		vertices[#vertices+1] = startW
-		vertices[#vertices+1] = startH + radius
-		vertices[#vertices+1] = startW
-		vertices[#vertices+1] = endH - radius
-		local points = quadraticCurve(startW, endH - radius,
-				startW, endH, 
-				startW + radius, endH)
-		for i = 1, #points do
-			vertices[#vertices+1] = points[i]
-		end
-		vertices[#vertices+1] = endW - radius
-		vertices[#vertices+1] = endH
-		local points = quadraticCurve(endW - radius, endH,
-				endW, endH, 
-				endW, endH - radius)
-		for i = 1, #points do
-			vertices[#vertices+1] = points[i]
-		end
-		
-		vertices[#vertices+1] = endW
-		vertices[#vertices+1] = startH + radius
-		local points = quadraticCurve(endW, startH + radius,
-				endW, startH, 
-				endW - radius, startH)
-		for i = 1, #points do
-			vertices[#vertices+1] = points[i]
-		end
-		vertices[#vertices+1] = startW + radius
-		vertices[#vertices+1] = startH
-		local points = quadraticCurve(startW + radius, startH,
-				startW, startH, 
-				startW, startH + radius)
-		for i = 1, #points do
-			vertices[#vertices+1] = points[i]
-		end
-		poly:set(unpack(vertices))
-		
-		local fixture = body:createFixture{shape = chain, density = conf.density, 
-		friction = conf.friction, restitution = conf.restitution, isSensor = conf.isSensor}
-		
-		if object then
-			body:setPosition(object:getX(), object:getY())
-			body:setAngle(math.rad(object:getRotation()))
-			object.body = body
-			body.object = object
-			if conf.type == "dynamic" and conf.draggable then
-				self:makeDraggable(object)
-			end
-			self:__enchanceObject(object)
-		end
-		
-		body.userdata = {}
-		body.joints = {}
-		
-		return self
-		
-	end]]
-	
 	function b2.World:createTerrain(object, vertices, config)
 		
 		local conf = {
@@ -593,17 +494,80 @@ function loadPhysicsExtension()
 	function b2.Body:getData(key)
 		return self.userdata[key]
 	end
+	
+	function b2.Body:set(param, val)
+		local x, y = self:getPosition()
+        local lvx, lvy = self:getLinearVelocity()
+		if param == "x" then
+			x = val
+			self:setPosition(x, y)
+		elseif param == "y" then
+			y = val
+			self:setPosition(x, y)
+		elseif param == "rotation" then
+			self:setAngle(math.rad(val))		
+		else
+			local m = param:gsub("^%l", string.upper) -- convert linearVelocity to LinearVelocity
+			if self["set"..m] ~= nil then
+				self["set"..m](self, val)
+			else --lets check for x or y on the end as in linearVelocityX
+				local last = string.lower(m:sub(string.len(m))) --get last character
+				local m = m:sub(1, string.len(m)-1) -- get LinearVelocity from LinearVelocityX
+				if self["set"..m] ~= nil and (last == "x" or last == "y") then
+					local x, y = self["get"..m](self) -- get x and y values
+					if last == "x" then
+						self["set"..m](self, val, y)
+					elseif last == "y" then
+						self["set"..m](self, x, val)
+					end
+				end
+			end
+		end
+	end
+ 
+	function b2.Body:get(param)
+		local x, y = self:getPosition()
+        local lvx, lvy = self:getLinearVelocity()
+		if param == "x" then
+			return x
+		elseif param == "y" then
+			return y
+		elseif param == "rotation" then
+			return math.deg(self:getAngle())		
+		else
+			local m = param:gsub("^%l", string.upper) -- convert linearVelocity to LinearVelocity
+			if self["get"..m] ~= nil then
+				return self["get"..m](self)
+			else --lets check for x or y on the end as in linearVelocityX
+				local last = string.lower(m:sub(string.len(m))) --get last character
+				local m = m:sub(1, string.len(m)-1) -- get LinearVelocity from LinearVelocityX
+				if self["get"..m] ~= nil and (last == "x" or last == "y") then
+					local x, y = self["get"..m](self) -- get x and y values
+					if last == "x" then
+						return x
+					elseif last == "y" then
+						return y
+					end
+				end
+			end
+		end
+	end
 end
 
 --[[ catching the load of box2d ]]--
 
-local _require = require
-require = function(name)
-	local answer = _require(name)
-	if name == "box2d" then
-		-- load box2d extensions
-		loadPhysicsExtension()
-		require = _require
+if b2 == nil then
+
+	local _require = require
+	require = function(name)
+		local answer = _require(name)
+		if name == "box2d" then
+			-- load box2d extensions
+			loadPhysicsExtension()
+			require = _require
+		end
+		return answer
 	end
-	return answer
+else
+	loadPhysicsExtension()
 end

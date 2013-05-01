@@ -332,7 +332,15 @@ function Sprite:get(param)
 			local y = self:_get("y")
 			return y - self._offY
 		else
-			return self:_get(param)
+			local ret
+			if self.body then
+				ret = self.body:get(param)
+			end
+			if ret ~= nil then
+				return ret
+			else
+				return self:_get(param)
+			end
 		end
 	end
 end
@@ -521,7 +529,12 @@ function Sprite:set(param, value)
 				self.body:setAngle(math.rad(value))
 			end
 		end
-		Sprite._set(self, param, value)
+		local status = pcall(function()
+			Sprite._set(self, param, value)
+		end)
+		if not status and self.body then
+			self.body:set(param, value)
+		end
 		if param == "rotation" or param == "scaleX" or param == "scaleY" or param == "scale" then
 			self:setAnchorPoint(self:getAnchorPoint())
 		end

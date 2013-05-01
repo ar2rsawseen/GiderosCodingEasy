@@ -108,33 +108,11 @@ stage:addChild(text)
 --controlling z-index
 text:bringToFront()
 
+-- How to use
+local value = 10
+local body = crate
+body:set("linearVelocityX", -value)
+local tween = GTween.new(body, .8, {linearVelocityX = body:get("linearVelocityX") + value * 2}, {reflect = true, setLoop = true, repeatCount = 0})
+
 GTween.new(test, 2, {rotation = 720})
-
-world:addEventListener(Event.BEGIN_CONTACT, function(e)
-	print("begin contact")
-	for i, val in pairs(e) do
-		print(i, val)
-	end
-end)
-
-world:addEventListener(Event.END_CONTACT, function(e)
-	print("end contact")
-	for i, val in pairs(e) do
-		print(i, val)
-	end
-end)
-
-world:addEventListener(Event.PRE_SOLVE, function(e)
-	print("pre solve")
-	for i, val in pairs(e) do
-		print(i, val)
-	end
-end)
-
-world:addEventListener(Event.POST_SOLVE, function(e)
-	print("post solve")
-	for i, val in pairs(e) do
-		print(i, val)
-	end
-end)
 

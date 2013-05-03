@@ -110,9 +110,10 @@ text:bringToFront()
 
 -- How to use
 local value = 10
-local body = crate
-body:set("linearVelocityX", -value)
-local tween = GTween.new(body, .8, {linearVelocityX = body:get("linearVelocityX") + value * 2}, {reflect = true, setLoop = true, repeatCount = 0})
+crate:set("linearVelocityX", -value)
+GTween.new(crate, .8, {linearVelocityX = crate:get("linearVelocityX") + value * 2}, {reflect = true, setLoop = true, repeatCount = 0})
+GTween.new(ball, 0.8, {scaleBody = crate:get("scaleBody") + 0.5}, {reflect = true, setLoop = true, repeatCount = 0})
+
 
 GTween.new(test, 2, {rotation = 720})
 

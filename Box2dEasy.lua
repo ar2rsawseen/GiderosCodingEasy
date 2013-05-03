@@ -277,6 +277,8 @@ function loadPhysicsExtension()
 		
 		--create box2d physical object
 		local body = self:createBody{type = setType}
+		conf.shape = "rectangle"
+		body._conf = conf
 		
 		local angle
 		if object then
@@ -284,14 +286,15 @@ function loadPhysicsExtension()
 			object:setRotation(0)
 		end
 		
-		local width = conf.width or object:getWidth()
-		local height = conf.height or object:getHeight()
+		conf.width = conf.width or object:getWidth()
+		conf.height = conf.height or object:getHeight()
 		
 		local poly = b2.PolygonShape.new()
-		poly:setAsBox(width/2, height/2)
+		poly:setAsBox(conf.width/2, conf.height/2)
 		
 		local fixture = body:createFixture{shape = poly, density = conf.density, 
 		friction = conf.friction, restitution = conf.restitution, isSensor = conf.isSensor}
+		body._fixture = fixture
 		
 		if object then
 			object:setAnchorPoint(0.5, 0.5)
@@ -347,18 +350,21 @@ function loadPhysicsExtension()
 		
 		--create box2d physical object
 		local body = self:createBody{type = setType}
+		conf.shape = "circle"
+		body._conf = conf
 		local angle
 		if object then
 			angle = object:getRotation()
 			object:setRotation(0)
 		end
 		
-		local radius = conf.radius or object:getWidth()/2
+		conf.radius = conf.radius or object:getWidth()/2
 		
-		local circle = b2.CircleShape.new(0, 0, radius)
+		local circle = b2.CircleShape.new(0, 0, conf.radius)
 		
 		local fixture = body:createFixture{shape = circle, density = conf.density, 
 		friction = conf.friction, restitution = conf.restitution, isSensor = conf.isSensor}
+		body._fixture = fixture
 		
 		if object then
 			object:setAnchorPoint(0.5, 0.5)
@@ -413,12 +419,16 @@ function loadPhysicsExtension()
 		
 		--create box2d physical object
 		local body = self:createBody{type = setType}
+		conf.shape = "terrain"
+		body._conf = conf
 		
 		local chain = b2.ChainShape.new()
 		chain:createChain(unpack(vertices))
+		conf.vertices = vertices
 		
 		local fixture = body:createFixture{shape = chain, density = conf.density, 
 		friction = conf.friction, restitution = conf.restitution, isSensor = conf.isSensor}
+		body._fixture = fixture
 		
 		if object then
 			body:setPosition(object:getX(), object:getY())
@@ -503,7 +513,26 @@ function loadPhysicsExtension()
 			local x, y = self:getPosition()
 			self:setPosition(x, val)
 		elseif param == "rotation" then
-			self:setAngle(math.rad(val))		
+			self:setAngle(math.rad(val))
+		elseif param == "scaleBody" then
+			self._scale = val
+			if self._conf.shape == "rectangle" then
+				self:destroyFixture(self._fixture)
+				local poly = b2.PolygonShape.new()
+				poly:setAsBox((self._conf.width/2)*self._scale, (self._conf.height/2)*self._scale)
+				local fixture = self:createFixture{shape = poly, density = self._conf.density, 
+				friction = self._conf.friction, restitution = self._conf.restitution, isSensor = self._conf.isSensor}
+				self._fixture = fixture
+			elseif self._conf.shape == "circle" then
+				self:destroyFixture(self._fixture)
+				local circle = b2.CircleShape.new(0, 0, self._conf.radius*self._scale)
+				local fixture = self:createFixture{shape = circle, density = self._conf.density, 
+				friction = self._conf.friction, restitution = self._conf.restitution, isSensor = self._conf.isSensor}
+				self._fixture = fixture
+			end
+			if self.object then
+				self.object:setScale(self._scale)
+			end
 		else
 			local m = param:gsub("^%l", string.upper) -- convert linearVelocity to LinearVelocity
 			if self["set"..m] ~= nil then
@@ -532,6 +561,8 @@ function loadPhysicsExtension()
 			return y
 		elseif param == "rotation" then
 			return math.deg(self:getAngle())		
+		elseif param == "scaleBody" then
+			return self._scale or 1
 		else
 			local m = param:gsub("^%l", string.upper) -- convert linearVelocity to LinearVelocity
 			if self["get"..m] ~= nil then

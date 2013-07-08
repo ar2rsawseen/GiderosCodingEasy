@@ -297,7 +297,9 @@ function loadPhysicsExtension()
 		body._fixture = fixture
 		
 		if object then
-			object:setAnchorPoint(0.5, 0.5)
+			if getmetatable(object) ~= MovieClip then
+				object:setAnchorPoint(0.5, 0.5)
+			end
 			body:setPosition(object:getX(), object:getY())
 			body:setAngle(math.rad(angle))
 			object.body = body
@@ -367,7 +369,9 @@ function loadPhysicsExtension()
 		body._fixture = fixture
 		
 		if object then
-			object:setAnchorPoint(0.5, 0.5)
+			if getmetatable(object) ~= MovieClip then
+				object:setAnchorPoint(0.5, 0.5)
+			end
 			body:setPosition(object:getX(), object:getY())
 			body:setAngle(math.rad(angle))
 			object.body = body

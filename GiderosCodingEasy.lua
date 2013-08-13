@@ -761,6 +761,10 @@ function TextField:init(...)
 	self._text:setPosition(-baseX, -baseY)
 end
 
+function TextField:enableBaseLine()
+	self._text:setPosition(0, 0)
+end
+
 function TextField:setText(...)
 	self._text:setText(...)
 	if self._shadow then
@@ -1191,7 +1195,7 @@ function Sound:playWithLoopCount(startTime, nbLoops)
 	local channel = self:play(startTime, true) -- loop infinitely
  
 	-- set looping as false after (loops - 0.5) count
-	Timer.delayedCall((nbLoops - 0.5) * soundLength, function() channel:setLooping(false) end)
+	channel.__timer = Timer.delayedCall((nbLoops - 0.5) * soundLength, function() channel:setLooping(false) end)
  
 	return channel
 end
@@ -1203,8 +1207,10 @@ end
 SoundChannel.__stop =  SoundChannel.stop
 function SoundChannel:stop(...)
 	self:__stop(...)
-	self.isPlaying = false
 	application.sounds[self.id] = nil
+	if self.__timer then
+		self.__timer:stop()
+	end
 	return self
 end
 

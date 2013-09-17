@@ -360,9 +360,9 @@ end
 --[[ absolute positioning ]]--
 
 function Sprite:_loadAbsolute()
-	if not self.startx then
+	if not self._startx then
 		-- top left bottom right
-		self.startx ,self.starty, self.endx, self.endy = getAbsolutes()
+		self._startx ,self._starty, self._endx, self._endy = getAbsolutes()
 	end
 end
 
@@ -371,7 +371,7 @@ function Sprite:setAbsoluteX(x)
 	if type(x) == "string" then
 		return self:set("x", x.."Absolute")
 	else
-		return self:set("x", x+self.startx)
+		return self:set("x", x+self._startx)
 	end
 end
 
@@ -380,7 +380,7 @@ function Sprite:setAbsoluteY(y)
 	if type(y) == "string" then
 		return self:set("y", y.."Absolute")
 	else
-		return self:set("y", y+self.starty)
+		return self:set("y", y+self._starty)
 	end
 end
 
@@ -482,9 +482,9 @@ function Sprite:set(param, value)
 					left = ax*width,
 					center = application:getContentWidth()/2 - width/2 + ax*width,
 					right = application:getContentWidth() - ax*width,
-					leftAbsolute = ax*width+self.startx,
+					leftAbsolute = ax*width+self._startx,
 					centerAbsolute = application:getContentWidth()/2 - width/2 + ax*width,
-					rightAbsolute = (self.endx - ax*width)
+					rightAbsolute = (self._endx - ax*width)
 				}
 				value = xPosition[value]
 				if not value then
@@ -507,9 +507,9 @@ function Sprite:set(param, value)
 					top = ay*height,
 					center = application:getContentHeight()/2 - height/2 + ay*height,
 					bottom = application:getContentHeight() - ay*height,
-					topAbsolute = ay*height+self.starty,
+					topAbsolute = ay*height+self._starty,
 					centerAbsolute = application:getContentHeight()/2 - height/2 + ay*height,
-					bottomAbsolute = (self.endy - ay*height)
+					bottomAbsolute = (self._endy - ay*height)
 				}
 				value = yPosition[value]
 				if not value then
@@ -651,21 +651,21 @@ end
 --[[ hiding/showing visually and from touch/mouse events ]]--
 
 function Sprite:hide()
-	if not self.isHidden then
-		self.xScale, self.yScale = self:getScale()
+	if not self._isHidden then
+		self._xScale, self._yScale = self:getScale()
 		self:setScale(0)
-		self.isHidden = true
+		self._isHidden = true
 	end
 	return self
 end
 
 function Sprite:isHidden()
-	return self.isHidden
+	return self._isHidden
 end
 
 function Sprite:show()
-	if self.isHidden then
-		self:setScale(self.xScale, self.yScale)
+	if self._isHidden then
+		self:setScale(self._xScale, self._yScale)
 	end
 	return self
 end
@@ -723,12 +723,12 @@ function Bitmap.new(...)
 	end
 	
 	local bitmap = Bitmap._new(arg[1])
-	bitmap.texture = arg[1]
+	bitmap._texture = arg[1]
 	return bitmap
 end
 
 function Bitmap:getTexture()
-	return self.texture
+	return self._texture
 end
 
 Bitmap._setAnchorPoint = Bitmap.setAnchorPoint
@@ -1077,35 +1077,35 @@ end
 --[[ absolute positioning ]]--
 
 function Application:_loadAbsolute()
-	if not self.startx then
+	if not self._startx then
 		-- top left bottom right
-		self.startx ,self.starty, self.endx, self.endy = getAbsolutes()
+		self._startx ,self._starty, self._endx, self._endy = getAbsolutes()
 	end
 end
 
 function Application:getAbsoluteWidth()
 	self:_loadAbsolute()
-	return self.endx - self.startx
+	return self._endx - self._startx
 end
 
 function Application:getAbsoluteHeight()
 	self:_loadAbsolute()
-	return self.endy - self.starty
+	return self._endy - self._starty
 end
 
 --[[ global volume implementation ]]--
 
 function Application:setVolume(volume)
-	self.currentVolume = volume
-	for i = 1, #self.sounds do
-		self.sounds[i]:setVolume(volume)
+	self._currentVolume = volume
+	for i = 1, #self._sounds do
+		self._sounds[i]:setVolume(volume)
 	end
 	return self
 end
 
 function Application:getVolume()
-	if self.currentVolume then
-		return self.currentVolume
+	if self._currentVolume then
+		return self._currentVolume
 	else
 		return 1
 	end
@@ -1175,13 +1175,13 @@ Sound._play = Sound.play
 function Sound:play(...)
 	local channel = self:_play(...)
 	if channel ~= nil then
-		if application.sounds == nil then
-			application.sounds = {}
-			application.currentSound = 1
+		if application._sounds == nil then
+			application._sounds = {}
+			application._currentSound = 1
 		end
-		channel.id = application.currentSound
-		application.sounds[channel.id] = channel
-		application.currentSound = application.currentSound + 1
+		channel._id = application._currentSound
+		application._sounds[channel._id] = channel
+		application._currentSound = application._currentSound + 1
 		--setting global volume
 		channel:setVolume(application:getVolume())
 	end
@@ -1207,7 +1207,7 @@ end
 SoundChannel.__stop =  SoundChannel.stop
 function SoundChannel:stop(...)
 	self:__stop(...)
-	application.sounds[self.id] = nil
+	application._sounds[self._id] = nil
 	if self.__timer then
 		self.__timer:stop()
 	end

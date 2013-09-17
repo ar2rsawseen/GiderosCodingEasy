@@ -9,49 +9,49 @@ function loadPhysicsExtension()
 	
 	--create new vector from 2 points (A starting point and B ending point)
 	function b2.Vect:init(startX, startY, endX, endY)
-		self.startX = startX
-		self.startY = startY
-		self.endX = endX
-		self.endY = endY
-		self.xVect = startX - endX
-		self.yVect = startY - endY
+		self._startX = startX
+		self._startY = startY
+		self._endX = endX
+		self._endY = endY
+		self._xVect = startX - endX
+		self._yVect = startY - endY
 	end
 	
 	--get vector on x axis
 	function b2.Vect:getX()
-		return self.xVect
+		return self._xVect
 	end
 	
 	--get vector on y axis
 	function b2.Vect:getY()
-		return self.yVect
+		return self._yVect
 	end
 	
 	--get the length of the vector (distance between A and B points)
 	function b2.Vect:getLength()
-		if not self.length then
-			self.length = math.sqrt(self.xVect*self.xVect + self.yVect*self.yVect)
+		if not self._length then
+			self._length = math.sqrt(self._xVect*self._xVect + self._yVect*self._yVect)
 		end
-		return self.length
+		return self._length
 	end
 	
 	--get the angle of vector (angle for AB line, when up is 0 radians)
 	function b2.Vect:getAngle()
-		if not self.angle then
-			self.angle = math.acos(self.yVect/(self:getLength()))
+		if not self._angle then
+			self._angle = math.acos(self._yVect/(self:getLength()))
 	
-			if(self.xVect > 0) then
-				self.angle = -self.angle
+			if(self._xVect > 0) then
+				self._angle = -self._angle
 			end
 		end
-		return self.angle
+		return self._angle
 	end
 	
 	--get point on AB vector with provided distance from point A
 	function b2.Vect:getPoint(fromDistance)
-		local ratio = math.sqrt((fromDistance*fromDistance)/(self.xVect*self.xVect + self.yVect*self.yVect))
-		local endX = self.startX + self.xVect*ratio
-		local endY = self.startY + self.yVect*ratio
+		local ratio = math.sqrt((fromDistance*fromDistance)/(self._xVect*self._xVect + self._yVect*self._yVect))
+		local endX = self._startX + self._xVect*ratio
+		local endY = self._startY + self._yVect*ratio
 		return endX, endY
 	end
 	

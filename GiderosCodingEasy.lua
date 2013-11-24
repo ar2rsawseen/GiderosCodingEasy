@@ -666,6 +666,7 @@ end
 function Sprite:show()
 	if self._isHidden then
 		self:setScale(self._xScale, self._yScale)
+		self._isHidden = false
 	end
 	return self
 end

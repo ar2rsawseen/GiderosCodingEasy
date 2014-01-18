@@ -491,14 +491,14 @@ function Sprite:set(param, value)
 					error("Invalid position name")
 				end
 			end
-			if self._offX then
-				value = value + self._offX
-			end
-			value = math.round(value)
 			if self.body then
 				local x,y = self.body:getPosition()
 				self.body:setPosition(value, y)
 			end
+			if self._offX then
+				value = value + self._offX
+			end
+			value = math.round(value)
 		elseif param == "y" then
 			if type(value) == "string" then
 				local _, _, width, height = self:getBounds(stage)
@@ -516,14 +516,14 @@ function Sprite:set(param, value)
 					error("Invalid position name")
 				end
 			end
-			if self._offY then
-				value = value + self._offY
-			end
-			value = math.round(value)
 			if self.body then
 				local x,y = self.body:getPosition()
 				self.body:setPosition(x, value)
 			end
+			if self._offY then
+				value = value + self._offY
+			end
+			value = math.round(value)
 		elseif param == "rotation" then
 			if self.body then
 				self.body:setAngle(math.rad(value))

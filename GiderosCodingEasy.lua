@@ -12,6 +12,7 @@ local function overRideMethod(object, func, index, callback)
 	if object ~= nil and object[func] ~= nil and object["__OV"..func] == nil then
 		object["__OV"..func] = object[func]
 		object[func] = function(...)
+			local arg = {...}
 			if arg[index] then
 				arg[index] = callback(arg[index])
 			end
@@ -331,6 +332,12 @@ function Sprite:get(param)
 		elseif param == "y" then
 			local y = self:_get("y")
 			return y - self._offY
+		elseif param == "anchorX" then
+			local ax, ay = self:getAnchorPoint()
+			return ax
+		elseif param == "anchorY" then
+			local ax, ay = self:getAnchorPoint()
+			return ay
 		else
 			local ret
 			if self.body then
@@ -528,6 +535,12 @@ function Sprite:set(param, value)
 			if self.body then
 				self.body:setAngle(math.rad(value))
 			end
+		elseif param == "anchorX" then
+			local ax, ay = self:getAnchorPoint()
+			self:setAnchorPoint(value, ay)
+		elseif param == "anchorY" then
+			local ax, ay = self:getAnchorPoint()
+			self:setAnchorPoint(ax, value)
 		end
 		local status = pcall(function()
 			Sprite._set(self, param, value)

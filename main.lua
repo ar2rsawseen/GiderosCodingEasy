@@ -113,6 +113,7 @@ local value = 10
 crate:set("linearVelocityX", -value)
 GTween.new(crate, .8, {linearVelocityX = crate:get("linearVelocityX") + value * 2}, {reflect = true, setLoop = true, repeatCount = 0})
 GTween.new(ball, 0.8, {scaleBody = crate:get("scaleBody") + 0.5}, {reflect = true, setLoop = true, repeatCount = 0})
+GTween.new(shape, 0.8, {anchorX = 1, anchorY = 1, rotation = 360}, {reflect = true, setLoop = true, repeatCount = 0})
 
 
 GTween.new(test, 2, {rotation = 720})

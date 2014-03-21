@@ -452,6 +452,46 @@ function loadPhysicsExtension()
 		
 	end
 	
+	function b2.World:changeBodyState(object, config)
+		-- remove this condition if you want change terrain body too
+		-- if object.body._conf.shape == "circle" or object.body._conf.shape=="rectangle" then
+		local conf = {
+			type = "static",
+			draggable = false,
+		}
+ 
+		if config then
+			--copying configuration
+			for key,value in pairs(config) do
+				conf[key]= value
+			end
+		end
+ 
+		local setType = b2.STATIC_BODY
+		if conf.type == "dynamic" then
+			setType = b2.DYNAMIC_BODY
+		elseif conf.type == "kinematic" then
+			setType = b2.KINEMATIC_BODY
+		end	
+ 
+		-- update body type and draggable
+		self.sprites[object.id].body:setType(setType)
+		object.body._conf.type = conf.setType
+		object.body._conf.draggable = conf.draggable
+ 
+		if conf.draggable then
+			self:makeDraggable(object)
+		else
+			if object.onDragStart then
+				self:undoDraggable(object)
+			end
+		end
+		--else
+			-- Do you want terrain dynamic or kinematic or draggable?
+			--print(object.body._conf.shape)
+		--end
+	end
+	
 	function b2.World:update()
 		-- edit the step values if required. These are good defaults!
 		self:step(1/60, 8, 3)
